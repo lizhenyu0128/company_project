@@ -3,10 +3,11 @@ package com.rome.message;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 
-public class MainVerticle extends AbstractVerticle {
+public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
   @Override
   public void start(Future<Void> startFuture) throws Exception {
+    System.out.println("wowowoowowo");
     vertx.createHttpServer().requestHandler(req -> {
       req.response()
         .putHeader("content-type", "text/plain")

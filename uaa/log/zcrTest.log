@@ -1,0 +1,1 @@
+[2019-05-29 15:45:30,605][vert.x-eventloop-thread-0][ERROR][com.rome.uaa.service.uaa.UaaServiceImpl:115] Connection refused: /127.0.0.1:6379

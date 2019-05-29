@@ -1,0 +1,14 @@
+{
+  "default":{
+    "url":"jdbc:mysql://localhost:3306/my_project",
+    "driver_class":"com.mysql.cj.jdbc.Driver",
+    "user":"root",
+    "password":"root"
+  },
+  "prod":{
+    "url":"jdbc:mysql://localhost:3306/my_project",
+    "driver_class":"com.mysql.cj.jdbc.Driver",
+    "user":"root",
+    "password":"root"
+  }
+}

@@ -1,0 +1,235 @@
+package com.rome.uaa.repository;
+
+import com.alibaba.fastjson.JSONObject;
+import com.rome.common.util.smsutil.JavaSmsApi;
+import com.rome.common.util.smsutil.VerificationCode;
+import com.rome.uaa.entity.UserSingIn;
+import io.reactivex.Completable;
+import io.reactivex.Single;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.PubSecKeyOptions;
+import io.vertx.ext.auth.jwt.JWTAuthOptions;
+import io.vertx.ext.jwt.JWTOptions;
+import io.vertx.ext.mail.MailMessage;
+import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
+import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
+import io.vertx.reactivex.ext.mail.MailClient;
+import io.vertx.reactivex.ext.sql.SQLClientHelper;
+import io.vertx.reactivex.redis.RedisClient;
+import org.mindrot.jbcrypt.BCrypt;
+
+
+
+/**
+ * Author:
+ * Data:2019-05-13 13:10
+ * Description:<>
+ *
+ * @author lizhenyu
+ */
+public class AccountRepository {
+    private AsyncSQLClient postgreSQLClient;
+    private Vertx vertx;
+    private MailClient mailClient;
+    private RedisClient redisClient;
+
+    public AccountRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient,
+                             RedisClient redisClient) {
+        this.postgreSQLClient = postgreSQLClient;
+        this.vertx = vertx;
+        this.mailClient = mailClient;
+        this.redisClient = redisClient;
+    }
+
+    /**
+     * @param singUpParam
+     * @return
+     * @description user sign up
+     * 1 判断是否插入，只能看error面
+     * 2 flatMap咋样返回常数
+     * 3 用户id的生成规则
+     */
+    public Single userSignUp(JsonArray singUpParam) {
+        System.out.println(singUpParam);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxUpdateWithParams("INSERT INTO basic_account VALUES(?,?,?,?,2,?,?," +
+                "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?)", singUpParam)
+                .map(singUpRes ->
+                    "success sign up"));
+    }
+
+
+    /**
+     * login_type phone mail basic
+     *
+     * @param u
+     * @return
+     * @description login_type phone mail basic
+     */
+    public Single userLogin(UserSingIn u) {
+        if (!"basic".equals(u.getLoginType())) {
+            if ("loginPhone".equals(u.getLoginType())) {
+                return userLoginByPhone(u);
+            } else if ("loginMail".equals(u.getLoginType())) {
+                return userLoginByMail(u);
+            } else {
+                return Single.error(new Exception("false"));
+            }
+        }
+        JsonArray loginParam = new JsonArray();
+        loginParam.add(u.getUserMail())
+            .add(u.getUserPhone());
+        System.out.println(loginParam);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> conn.rxQueryWithParams(
+            "SELECT *,user FROM login_view WHERE (user_mail=? or user_phone =? ) and use_status=1 ", loginParam)
+            .flatMap(res -> {
+                if (res.getRows().isEmpty()) {
+                    return Single.error(new Exception("用户不存在"));
+                }
+                JsonObject loginView = res.getRows().get(0);
+                if (BCrypt.checkpw(u.getUserPassword(), loginView.getString("user_password"))) {
+                    System.out.println("用户存在密码正确");
+                    //更新登陆状态
+                    loginParam.clear();
+                    loginParam.add(u.getUsingIp());
+                    loginParam.add(u.getLongitude());
+                    loginParam.add(u.getLatitude());
+                    loginParam.add(loginView.getValue("user_account"));
+                    return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
+                        "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_account=?", loginParam)
+                        .flatMap(updateResult -> {
+                            if (updateResult.getUpdated() > 0) {
+                                //更新jwt返回
+                                JsonObject jwtParam = new JsonObject()
+                                    .put("account", loginView.getValue("userAccount"))
+                                    //自 定义参数
+                                    .put("identityId", loginView.getValue("identityId"));
+                                return sendToken(jwtParam);
+                            }
+                            return Single.error(new Exception("false"));
+                        });
+                } else {
+                    return Single.error(new Exception("密码错误"));
+                }
+            }));
+    }
+
+    private Single<String> sendToken(JsonObject object) {
+        //   jwt 需要传userAccount identityId
+        JWTAuth provide = JWTAuth.create(vertx, new JWTAuthOptions()
+            .addPubSecKey(new PubSecKeyOptions()
+                // 算法
+                .setAlgorithm("HS256")
+                // 密钥
+                .setPublicKey("woaimaozedong")
+                // 是否对成加密
+                .setSymmetric(true)));
+        String token = provide.generateToken(
+            // 自定义参数
+            object,
+            new JWTOptions()
+                // 签发人
+                .setIssuer("王二麻子")
+                .setAudience(null)
+                // 过期时间
+                .setExpiresInSeconds(600000)
+                .setNoTimestamp(false));
+        return Single.just(token);
+    }
+
+    /**
+     * @param u
+     * @return
+     * @description login_type phone mail basic
+     */
+    private Single userLoginByPhone(UserSingIn u) {
+        //查缓存
+        String smsCode = u.getSmsCode();
+        String loginType = u.getLoginType();
+        String userPhone = u.getUserPhone();
+
+        return redisClient.rxGet(userPhone + loginType).filter((resData) -> {
+            if (resData.equals(smsCode)) {
+                return true;
+            } else {
+                throw new Error("验证码错误");
+            }
+        }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
+            JsonArray loginParam = new JsonArray();
+            loginParam.add(u.getUsingIp());
+            loginParam.add(u.getLongitude());
+            loginParam.add(u.getLatitude());
+            loginParam.add(userPhone);
+            return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=?", loginParam)
+                .filter((updateResult) -> updateResult.getUpdated() > 0)
+                .flatMapSingle(updateResult ->
+                    conn.rxQueryWithParams("SELECT user_account,identity_id FROM login_view WHERE user_phone= ? ", new JsonArray().add(userPhone))
+                        .flatMap(queryRes -> {
+                            JsonObject jwtObj = queryRes.getRows().get(0);
+                            System.out.println(jwtObj);
+                            return sendToken(jwtObj);
+                        }));
+        }));
+    }
+
+
+    /**
+     * @param object
+     * @return
+     * @description login get SMS code
+     * 生成一个短信验证码
+     * 生成短信验证码  获取手机号
+     * map<phone,SmsCode> 存到数据库 并设置缓存有效的时间
+     * 连接redis
+     */
+    public Completable getSmsCodeToLogin(JSONObject object) {
+        short effSeconds = 300;
+        System.out.println(object);
+        String userPhone = (String) object.get("userPhone");
+        String useType = (String) object.get("useType");
+        int smsCode = VerificationCode.getRandomNum();
+        System.out.println(smsCode);
+        return redisClient.rxSetex(userPhone + useType, effSeconds, Integer.toString(smsCode))
+            .filter((result) -> "OK".equals(result))
+            .flatMapCompletable((ignore) -> {
+                new JavaSmsApi().pushSMS(userPhone, String.valueOf(smsCode));
+                return Completable.complete();
+            });
+    }
+
+    /**
+     * @param u
+     * @return
+     * @description login by mail
+     */
+    private Single userLoginByMail(UserSingIn u) {
+        System.out.println(u);
+        return Single.just("走了邮箱");
+    }
+
+    /**
+     * send E-mail
+     *
+     * @param object
+     * @return
+     */
+    public Single sendEmail(JsonObject object) {
+        short effSeconds = 300;
+        String useType = object.getString("useType");
+        String recipient = object.getString("recipient");
+        Integer mailCode = VerificationCode.getRandomNum();
+        System.out.println(mailCode);
+        System.out.println(recipient);
+        System.out.println(useType);
+        MailMessage message = new MailMessage();
+        message.setFrom("879681805@qq.com");
+        message.setTo(recipient);
+        message.setCc("Another User <another@example.net>");
+        message.setText("您的验证码:" + mailCode + ",有效期为:" + effSeconds / 60 + "分钟");
+        return Single.concat(redisClient.rxSetex(recipient + useType, effSeconds, mailCode.toString()),
+            mailClient.rxSendMail(message)).lastOrError();
+    }
+}
+
