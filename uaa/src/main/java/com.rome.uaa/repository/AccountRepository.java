@@ -173,52 +173,5 @@ public class AccountRepository {
                         }));
         }));
     }
-
-    /**
-     * @param object
-     * @return
-     * @description login get SMS code
-     * 生成一个短信验证码
-     * 生成短信验证码  获取手机号
-     * map<phone,SmsCode> 存到数据库 并设置缓存有效的时间
-     * 连接redis
-     */
-    public Completable getSmsCodeToLogin(JSONObject object) {
-        short effSeconds = 300;
-        System.out.println(object);
-        String userPhone = (String) object.get("userPhone");
-        String useType = (String) object.get("useType");
-        int smsCode = VerificationCode.getRandomNum();
-        System.out.println(smsCode);
-        return redisClient.rxSetex(userPhone + useType, effSeconds, Integer.toString(smsCode))
-            .filter((result) -> "OK".equals(result))
-            .flatMapCompletable((ignore) -> {
-                new JavaSmsApi().pushSMS(userPhone, String.valueOf(smsCode));
-                return Completable.complete();
-            });
-    }
-
-    /**
-     * send E-mail
-     *
-     * @param object
-     * @return
-     */
-    public Single sendEmail(JsonObject object) {
-        short effSeconds = 300;
-        String useType = object.getString("useType");
-        String recipient = object.getString("recipient");
-        Integer mailCode = VerificationCode.getRandomNum();
-        System.out.println(mailCode);
-        System.out.println(recipient);
-        System.out.println(useType);
-        MailMessage message = new MailMessage();
-        message.setFrom("879681805@qq.com");
-        message.setTo(recipient);
-        message.setCc("Another User <another@example.net>");
-        message.setText("您的验证码:" + mailCode + ",有效期为:" + effSeconds / 60 + "分钟");
-        return Single.concat(redisClient.rxSetex(recipient + useType, effSeconds, mailCode.toString()),
-            mailClient.rxSendMail(message)).lastOrError();
-    }
 }
 
