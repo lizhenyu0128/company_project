@@ -97,8 +97,6 @@ public class UaaServiceImpl implements UaaService {
             })).doOnError(err -> logger.info(err.getMessage()));
     }
 
-
-
     @Override
     public Single resetPassword(String phonePrMail, String codeType, String verificationCode) {
         return null;

@@ -58,7 +58,6 @@ public class AccountRepository {
                     "success sign up"));
     }
 
-
     /**
      * login_type phone mail basic
      *
@@ -175,7 +174,6 @@ public class AccountRepository {
         }));
     }
 
-
     /**
      * @param object
      * @return
@@ -199,7 +197,6 @@ public class AccountRepository {
                 return Completable.complete();
             });
     }
-
 
     /**
      * send E-mail

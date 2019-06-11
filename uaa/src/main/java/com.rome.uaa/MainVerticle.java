@@ -96,8 +96,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         vertx
             .createHttpServer()
             .requestHandler(router)
-            .listen(config().getInteger("port", port)
-            );
+            .listen(config().getInteger("port", port));
 
         // 增加一个处理器，将请求的上下文信息，放到RoutingContext中
         router.route().handler(BodyHandler.create());
@@ -114,7 +113,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // protect router demo
         router.get("/api/user/sss").handler(routingContext -> ResponseContent.success(routingContext, 205, "来到以后方法"));
-
 
         // user sign up
         router.put("/api/signUp").handler(routingContext -> {
@@ -156,7 +154,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     .setMessageType(messageType)
                     .build();
                 stub.getVerificationCode(request, ar -> {
-
                     if (ar.succeeded()) {
                         ResponseContent.success(routingContext, 200, ar.result().getResultJson());
                     } else {
@@ -167,11 +164,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
     }
 
-
     private Completable consulInit(JsonObject config) {
+
         //consol发现服务
-
-
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
             new JsonObject()
                 //发现远端注册中心
@@ -187,7 +182,5 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     emitter.onError(new Throwable("err"));
                 }
             }));
-
     }
-
 }

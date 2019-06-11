@@ -15,7 +15,6 @@ public class RpcConfig {
 
     public static ManagedChannel startRpcClient(Vertx vertx,String host, int port) {
         System.out.println("客户端启动");
-
         return VertxChannelBuilder
             .forAddress(vertx.getDelegate(), host, port)
             .usePlaintext(true)

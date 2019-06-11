@@ -56,16 +56,11 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
             //发现服务
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
-
                 // 配置传递
                 messageService = new MessageServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
-
                 toCommRPCController();
             });
-
-
         }, err -> logger.error(((Exception) err).getMessage()));
-
     }
 
     private void toCommRPCController() throws IOException {
@@ -93,9 +88,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     }
 
     private Completable consulInit(JsonObject config) {
+
         //consol发现服务
-
-
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
             new JsonObject()
                 //发现远端注册中心
@@ -111,7 +105,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     emitter.onError(new Throwable("err"));
                 }
             }));
-
     }
 
 }
