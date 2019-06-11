@@ -63,7 +63,7 @@ public class AccountRepository {
             System.out.println(smsCode);
             System.out.println(res + "结果");
             if ("OK".equals(res)) {
-                //发送短信验证码
+                //发送短信验证码 .
                 //new JavaSmsApi().pushSMS(userPhone, String.valueOf(smsCode));
                 return Single.just("success");
             } else {
