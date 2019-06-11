@@ -1,8 +1,8 @@
 package com.rome.uaa.repository;
 
 import com.alibaba.fastjson.JSONObject;
-import com.rome.common.util.smsutil.JavaSmsApi;
-import com.rome.common.util.smsutil.VerificationCode;
+import com.rome.common.util.smsutil.*;
+import com.rome.common.util.VerificationCode;
 import com.rome.uaa.entity.UserSingIn;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -20,14 +20,12 @@ import io.vertx.reactivex.ext.sql.SQLClientHelper;
 import io.vertx.reactivex.redis.RedisClient;
 import org.mindrot.jbcrypt.BCrypt;
 
-
-
 /**
  * Author:
  * Data:2019-05-13 13:10
  * Description:<>
  *
- * @author lizhenyu
+ * @author Trump
  */
 public class AccountRepository {
     private AsyncSQLClient postgreSQLClient;
@@ -70,13 +68,7 @@ public class AccountRepository {
      */
     public Single userLogin(UserSingIn u) {
         if (!"basic".equals(u.getLoginType())) {
-            if ("loginPhone".equals(u.getLoginType())) {
-                return userLoginByPhone(u);
-            } else if ("loginMail".equals(u.getLoginType())) {
-                return userLoginByMail(u);
-            } else {
-                return Single.error(new Exception("false"));
-            }
+            return userLoginByCode(u);
         }
         JsonArray loginParam = new JsonArray();
         loginParam.add(u.getUserMail())
@@ -144,28 +136,37 @@ public class AccountRepository {
      * @return
      * @description login_type phone mail basic
      */
-    private Single userLoginByPhone(UserSingIn u) {
+    private Single userLoginByCode(UserSingIn u) {
         //查缓存
-        String smsCode = u.getSmsCode();
-        String loginType = u.getLoginType();
-        String userPhone = u.getUserPhone();
 
-        return redisClient.rxGet(userPhone + loginType).filter((resData) -> {
-            if (resData.equals(smsCode)) {
+        String code = u.getVerificationCode();
+        String loginType = u.getLoginType();
+        String phoneOrMail = "mail".equals(loginType) ? u.getUserMail() : u.getUserPhone();
+        System.out.println("使用" + u.getLoginType() + "登陆");
+        System.out.println(phoneOrMail + loginType);
+        return redisClient.rxGet(phoneOrMail + "login").filter((resData) -> {
+            if (resData.equals(code)) {
+                System.out.println("哈哈哈哈哈");
                 return true;
             } else {
                 throw new Error("验证码错误");
             }
         }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
+            System.out.println("萨达萨达");
             JsonArray loginParam = new JsonArray();
             loginParam.add(u.getUsingIp());
             loginParam.add(u.getLongitude());
             loginParam.add(u.getLatitude());
-            loginParam.add(userPhone);
-            return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=?", loginParam)
+            loginParam.add(phoneOrMail);
+            loginParam.add(phoneOrMail);
+            System.out.println(loginParam);
+            return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
+                "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=? or user_mail=?", loginParam)
                 .filter((updateResult) -> updateResult.getUpdated() > 0)
                 .flatMapSingle(updateResult ->
-                    conn.rxQueryWithParams("SELECT user_account,identity_id FROM login_view WHERE user_phone= ? ", new JsonArray().add(userPhone))
+                    conn.rxQueryWithParams("SELECT user_account,identity_id FROM " +
+                                                "login_view WHERE user_phone = ? or user_mail = ?",
+                        new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
                             System.out.println(jwtObj);
@@ -199,15 +200,6 @@ public class AccountRepository {
             });
     }
 
-    /**
-     * @param u
-     * @return
-     * @description login by mail
-     */
-    private Single userLoginByMail(UserSingIn u) {
-        System.out.println(u);
-        return Single.just("走了邮箱");
-    }
 
     /**
      * send E-mail

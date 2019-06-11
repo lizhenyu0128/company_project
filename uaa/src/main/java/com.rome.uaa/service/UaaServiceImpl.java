@@ -1,6 +1,7 @@
-package com.rome.uaa.service.uaa;
+package com.rome.uaa.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * Data:2019-05-11 09:51
  * Description:<>
  *
- * @author lizhenyu
+ * @author Trump
  */
 public class UaaServiceImpl implements UaaService {
     final static Logger logger = LoggerFactory.getLogger(UaaServiceImpl.class);
@@ -97,22 +98,14 @@ public class UaaServiceImpl implements UaaService {
     }
 
 
+
     @Override
-    public Completable getSmsCodeToLogin(String userPhone) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("userPhone", userPhone);
-        jsonObject.put("useType", "loginPhone");
-        return accountRepository.getSmsCodeToLogin(jsonObject).doOnError(
-            err -> logger.info(err.getMessage())
-        );
+    public Single resetPassword(String phonePrMail, String codeType, String verificationCode) {
+        return null;
     }
 
     @Override
-    public Single sendEmail(String useType, String recipient) {
-        JsonObject jsonObject = new JsonObject().put("useType", useType).put("recipient", recipient);
-        return accountRepository.sendEmail(jsonObject).doOnError(err -> {
-
-            logger.error(((Exception) err).getMessage());
-        });
+    public Single updateBasicUserInfo(BasicUserInfo basicUserInfo) {
+        return null;
     }
 }

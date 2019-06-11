@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * Author:
  * Data:2019-05-13 16:06
  * Description:<>
- * @author lizhenyu
+ * @author Trump
  */
 public class JsonUtil {
   private static Pattern humpPattern = Pattern.compile("[A-Z]");

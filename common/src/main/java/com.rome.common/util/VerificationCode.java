@@ -1,4 +1,4 @@
-package com.rome.common.util.smsutil;
+package com.rome.common.util;
 
 import java.util.Random;
 
@@ -6,7 +6,7 @@ import java.util.Random;
  * Author:
  * Data:2019-05-22 17:01
  * Description:<>
- * @author lizhenyu
+ * @author Trump
  */
 public class VerificationCode {
   public static int getRandomNum() {

@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.Length;
  * Author:
  * Data:2019-05-26 11:03
  * Description:<>
- * @author lizhenyu
+ * @author Trump
  */
 
 @Data
@@ -23,7 +23,7 @@ public class UserSingIn {
   @Length(min = 10, max = 18, message = "手机号长度必须为8-18")
   private String userPhone;
   @NonNull
-  private String smsCode;
+  private String verificationCode;
   @NonNull
   private String usingIp;
   private Long lastLoginTime;

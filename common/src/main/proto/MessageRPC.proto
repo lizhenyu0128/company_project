@@ -1,0 +1,22 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package com.rome.common.rpc.message;
+message  VerificationCodeReq {
+
+  string messageType = 1;
+  string useType = 2;
+  string messageContent = 3;
+
+}
+
+message VerificationCodeRes {
+
+  string resultJson =1;
+
+}
+
+service VerificationCodeService {
+
+  rpc getVerificationCode(VerificationCodeReq ) returns (VerificationCodeRes);
+}
+

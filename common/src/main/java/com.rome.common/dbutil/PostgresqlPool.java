@@ -11,7 +11,7 @@ import io.vertx.reactivex.ext.asyncsql.PostgreSQLClient;
  * Data:2019-05-17 15:59
  * Description:<>
  *
- * @author lizhenyu
+ * @author Trump
  */
 public class PostgresqlPool {
 
@@ -21,22 +21,18 @@ public class PostgresqlPool {
   /**
    * 设置数据库连接池参数
    */
-  private static JsonObject dbConfig = new JsonObject()
-    .put("host", "localhost")
-    .put("driver_class", "org.postgresql.Driver")
-    .put("username", "lizhenyu")
-    .put("password", "")
-    .put("database", "company_db");
 
   private PostgresqlPool() {
+
   }
 
-  public static PostgresqlPool getInstance(Vertx vertx) {
+  public static PostgresqlPool getInstance(Vertx vertx,JsonObject config) {
+
     if (postgresqlPool == null) {
       synchronized (PostgresqlPool.class) {
         if (postgresqlPool == null) {
           postgresqlPool = new PostgresqlPool();
-          asyncSQLClient = PostgreSQLClient.createShared(vertx, dbConfig);
+          asyncSQLClient = PostgreSQLClient.createShared(vertx,config);
         }
       }
     }

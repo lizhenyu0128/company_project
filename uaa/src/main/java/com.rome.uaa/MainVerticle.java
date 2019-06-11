@@ -2,15 +2,22 @@ package com.rome.uaa;
 
 
 import com.alibaba.fastjson.JSON;
+import com.rome.common.config.InitConfig;
+import com.rome.common.constant.UaaConsts;
 import com.rome.common.dbutil.PostgresqlPool;
-import com.rome.common.smtp.SMTPConfig;
+import com.rome.common.rpc.message.VerificationCodeReq;
+import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
+import com.rome.common.config.SMTPConfig;
 import com.rome.common.util.ResponseContent;
+import com.rome.uaa.rpc.RpcConfig;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
-import com.rome.uaa.service.uaa.UaaService;
-import com.rome.uaa.service.uaa.UaaServiceImpl;
+import com.rome.uaa.service.UaaService;
+import com.rome.uaa.service.UaaServiceImpl;
+import io.grpc.ManagedChannel;
+import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
@@ -18,44 +25,80 @@ import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.handler.*;
 import io.vertx.reactivex.redis.RedisClient;
+import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
+import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
+import io.vertx.servicediscovery.consul.ConsulServiceImporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.logging.Logger;
-
+import java.io.File;
 
 /**
- * @author lizhenyu
+ * @author Trump
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
+
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
+    private AsyncSQLClient postgreSQLClient;
+    private MailClient mailClient;
+    private RedisClient redisClient;
+    private UaaService uaaService;
+    private ServiceDiscovery discovery;
 
     @Override
     public void start(Future<Void> startFuture) {
 
 
-        RedisClient redisClient;
+        //初始化配置文件
+        InitConfig.initConfig(vertx, this, CONFIG_PATH).subscribe(res -> {
+            logger.info("初始化配置成功");
+            // 连接database
+            postgreSQLClient = PostgresqlPool.getInstance(vertx, config().getJsonObject("PostgreSQL")).getPostClient();
 
-        // 连接database
-        AsyncSQLClient postgreSQLClient = PostgresqlPool.getInstance(vertx).getPostClient();
+            // 生成 SMTP client
+            mailClient = SMTPConfig.creatSMTPClient(vertx, config().getJsonObject("ConfigSMTP"));
 
-        // 生成 SMTP client
-        MailClient mailClient = SMTPConfig.creatSMTPClient(vertx, 587, "smtp.qq.com", "879681805@qq.com", "urquajrzliwdbfjf");
+            // 配置RedisClient
+            redisClient = RedisClient.create(vertx, config().getJsonObject("RedisClient"));
 
-        // 配置RedisClient
-        redisClient = RedisClient.create(vertx, new JsonObject().put("port", 6379));
+            //
+            discovery = ServiceDiscovery.create(vertx);
+            //发现服务
+            consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
 
+                // 配置传递
+                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
 
-        // 配置传递
-        UaaService uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                routerController();
+            });
+
+            //运行
+
+        }, err -> logger.error(((Exception) err).getMessage()));
+
+    }
+
+    private void routerController() {
+
+        //获取某个服务
+        JsonObject uaa01 = discovery.rxGetRecord(new JsonObject().put("name", "uaa01")).blockingGet().getMetadata();
+        JsonObject message01 = discovery.rxGetRecord(new JsonObject().put("name", "message01")).blockingGet().getMetadata();
+        this.config().getJsonObject("ConsulServer").put(uaa01.getString("ServiceName"), uaa01);
+        this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
+        Integer port = uaa01.getInteger("ServicePort");
+        
+        //message channel
+        ManagedChannel messageChannel = RpcConfig.startRpcClient(vertx, message01.getString("ServiceAddress"), message01.getInteger("ServicePort"));
 
         // Create a router object.
         Router router = Router.router(vertx);
         vertx
             .createHttpServer()
             .requestHandler(router)
-            .listen(config().getInteger("port", 8080)
+            .listen(config().getInteger("port", port)
             );
 
-
-        // 路由业务
         // 增加一个处理器，将请求的上下文信息，放到RoutingContext中
         router.route().handler(BodyHandler.create());
         router.route("/api/user/*")
@@ -97,20 +140,54 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 , error -> ResponseContent.success(routingContext, 205, "false"));
         });
 
-        // login get SMS code
-        router.get("/api/smsCode/phone/:phone").handler(routingContext -> {
-            String userPhone = routingContext.request().getParam("phone");
-            uaaService.getSmsCodeToLogin(userPhone).subscribe(() -> ResponseContent.success(routingContext, 200, "success")
-                , error -> ResponseContent.success(routingContext, 205, "false"));
-        });
+        // send SMS or mail
+        router.get("/api/verifiedCode/messageType/:messageType/useType/:useType/content/:content").handler(routingContext -> {
 
-        // send a e-mail demo QQ mail
-        router.get("/api/email/useType/:useType/recipient/:recipient").handler(routingContext -> {
+            String messageType = routingContext.request().getParam("messageType");
             String useType = routingContext.request().getParam("useType");
-            String recipient = routingContext.request().getParam("recipient");
+            String content = routingContext.request().getParam("content");
+            if (!UaaConsts.MESSAGE_TYPE_MAIL.equals(messageType) && !UaaConsts.MESSAGE_TYPE_PHONE.equals(messageType)) {
+                ResponseContent.success(routingContext, 200, "false");
+            } else {
+                VerificationCodeServiceGrpc.VerificationCodeServiceVertxStub stub = VerificationCodeServiceGrpc.newVertxStub(messageChannel);
+                VerificationCodeReq request = VerificationCodeReq.newBuilder()
+                    .setMessageContent(content)
+                    .setUseType(useType)
+                    .setMessageType(messageType)
+                    .build();
+                stub.getVerificationCode(request, ar -> {
 
-            uaaService.sendEmail(useType, recipient).subscribe(result -> ResponseContent.success(routingContext, 200, "success")
-                , error -> ResponseContent.success(routingContext, 205, "false"));
+                    if (ar.succeeded()) {
+                        ResponseContent.success(routingContext, 200, ar.result().getResultJson());
+                    } else {
+                        ResponseContent.success(routingContext, 200, "false");
+                    }
+                });
+            }
         });
     }
+
+
+    private Completable consulInit(JsonObject config) {
+        //consol发现服务
+
+
+        return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
+            new JsonObject()
+                //发现远端注册中心
+                //主机
+                .put("host", config.getString("host"))
+                //端口
+                .put("port", config.getInteger("port"))
+                //检察时间
+                .put("scan-period", 2000), res -> {
+                if (res.succeeded()) {
+                    emitter.onComplete();
+                } else {
+                    emitter.onError(new Throwable("err"));
+                }
+            }));
+
+    }
+
 }

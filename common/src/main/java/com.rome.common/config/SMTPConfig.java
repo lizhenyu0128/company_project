@@ -1,5 +1,6 @@
-package com.rome.common.smtp;
+package com.rome.common.config;
 
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mail.MailConfig;
 import io.vertx.ext.mail.StartTLSOptions;
 import io.vertx.reactivex.core.Vertx;
@@ -9,16 +10,16 @@ import io.vertx.reactivex.ext.mail.MailClient;
  * Author:
  * Data:2019-05-26 17:19
  * Description:<>
- * @author lizhenyu
+ * @author Trump
  */
 public class SMTPConfig {
-  public static MailClient creatSMTPClient(Vertx vertx, int port, String hostName, String userName, String passWord) {
+  public static MailClient creatSMTPClient(Vertx vertx, JsonObject smtpConfig) {
     MailConfig config = new MailConfig();
-    config.setHostname(hostName);
-    config.setPort(port);
+    config.setHostname(smtpConfig.getString("hostName"));
+    config.setPort(smtpConfig.getInteger("port"));
     config.setStarttls(StartTLSOptions.REQUIRED);
-    config.setUsername(userName);
-    config.setPassword(passWord);
+    config.setUsername(smtpConfig.getString("userName"));
+    config.setPassword(smtpConfig.getString("passWord"));
     return MailClient.createNonShared(vertx, config);
   }
 }

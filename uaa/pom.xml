@@ -22,8 +22,12 @@
           <artifactId>junit-platform-commons</artifactId>
           <version>RELEASE</version>
           <scope>compile</scope>
-      </dependency>
 
+      </dependency>
+      <dependency>
+          <groupId>io.vertx</groupId>
+          <artifactId>vertx-service-discovery</artifactId>
+      </dependency>
   </dependencies>
 
   <build>

@@ -24,7 +24,7 @@
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
         <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
-
+        <vertx.grpc.version>3.7.0</vertx.grpc.version>
         <vertx.version>3.7.0</vertx.version>
         <log4j.version>2.5</log4j.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
@@ -76,6 +76,10 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-service-discovery</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-service-discovery-bridge-consul</artifactId>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
@@ -192,6 +196,24 @@
             <version>${log4j.version}</version>
         </dependency>
         <!-- log4j end-->
-
+        <!--gRPC-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-grpc</artifactId>
+            <version>${vertx.grpc.version}</version>
+        </dependency>
+        <!--consul-->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-consul-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config</artifactId>
+        </dependency>
     </dependencies>
 </project>

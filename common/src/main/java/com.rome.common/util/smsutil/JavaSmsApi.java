@@ -22,6 +22,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -101,7 +102,7 @@ public class JavaSmsApi {
      * 取账户信息
      *
      * @return json格式字符串
-     * @throws java.io.IOException
+     * @throws IOException
      */
 
     public static String getUserInfo(String apikey) throws IOException,

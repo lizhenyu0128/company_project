@@ -4,7 +4,7 @@ package com.rome.common.errors;
  * Author:
  * Data:2019-05-16 15:30
  * Description:<>
- * @author lizhenyu
+ * @author Trump
  */
 public class UnkonwServerException extends Exception {
   public UnkonwServerException() {

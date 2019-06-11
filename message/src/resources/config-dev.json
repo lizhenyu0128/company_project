@@ -1,0 +1,22 @@
+{
+    "PostgreSQL": {
+        "host": "localhost",
+        "driver_class": "org.postgresql.Driver",
+        "username": "lizhenyu",
+        "password": "",
+        "database": "company_db"
+    },
+    "ConfigSMTP": {
+        "port": 587,
+        "hostName": "smtp.qq.com",
+        "userName": "879681805@qq.com",
+        "passWord": "urquajrzliwdbfjf"
+    },
+    "RedisClient": {
+        "port": 6379
+    },
+    "ConsulConfig": {
+        "host": "localhost",
+        "port": 8500
+    }
+}

@@ -7,7 +7,7 @@ import javax.validation.Validator;
 import java.util.Set;
 
 /**
- * @author lizhenyu
+ * @author Trump
  */
 public class ValidatorUtil {
   private static Validator validator = Validation.buildDefaultValidatorFactory()
