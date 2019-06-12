@@ -3,6 +3,7 @@ package com.rome.uaa.repository;
 import com.alibaba.fastjson.JSONObject;
 import com.rome.common.util.smsutil.*;
 import com.rome.common.util.VerificationCode;
+import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSingIn;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -19,6 +20,7 @@ import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
 import io.vertx.reactivex.redis.RedisClient;
 import org.mindrot.jbcrypt.BCrypt;
+import org.mvel2.templates.TemplateRuntimeError;
 
 /**
  * Author:
@@ -173,5 +175,73 @@ public class AccountRepository {
                         }));
         }));
     }
+
+    /**
+     * @param newPassword
+     * @param loginType
+     * @param phonePrMail
+     * @return Single
+     * @description reset password
+     */
+    public  Single resetPassword(String loginType,String phonePrMail,String newPassword){
+
+        JsonArray resetPassword=new JsonArray().
+            add(newPassword).
+            add(loginType).
+            add(phonePrMail).
+            add(phonePrMail);
+
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE login_type=? and (user_phone=? or user_mail=?)", resetPassword)
+                .map(updateResult ->{
+                    if (updateResult.getUpdated() > 0) {
+                       return Single.just("successful");
+                    }
+                    return Single.error(new Exception("false"));
+                }));
+
+    }
+
+    /**
+     * @param phonePrMail
+     * @param verificationCode
+     * @param loginType
+     * @return Single
+     * @description check verifiedCode
+     */
+    public Single checkVerifiedCode(String phonePrMail,String verificationCode,String loginType){
+        return redisClient.rxGet(phonePrMail + loginType).flatMapSingle((resData) -> {
+            if (resData.equals(verificationCode)) {
+                System.out.println("验证成功");
+                return Single.just("successful");
+            } else {
+                throw new Error("验证码错误");
+            }
+
+        });
+    }
+
+    /**
+     * update basic user information
+     *
+     * @param basicUserInfo
+     * @return Single
+     * Author: sunYang
+     */
+    public Single updateBasicUserInfo(BasicUserInfo basicUserInfo){
+        JsonArray resetPassword=new JsonArray().add(basicUserInfo);
+
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE login_type=? or user_account=?", resetPassword)
+                .map(updateResult ->{
+                    if (updateResult.getUpdated() > 0) {
+                        return Single.just("successful");
+                    }
+                    return Single.error(new Exception("false"));
+                }));
+    }
+
+
+
 }
 

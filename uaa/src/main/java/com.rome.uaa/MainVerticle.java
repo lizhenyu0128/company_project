@@ -9,6 +9,7 @@ import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.util.ResponseContent;
+import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.rpc.RpcConfig;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
@@ -162,6 +163,37 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 });
             }
         });
+
+        //    check verifiedCode
+        router.get("/api/checkVerifiedCode/phonePrMail/:phonePrMail/verificationCode/:verificationCode/loginType/:loginType").handler(routingContext -> {
+            String phonePrMail = routingContext.getBodyAsJson().toString();
+            String verificationCode = routingContext.getBodyAsJson().toString();
+            String loginType = routingContext.getBodyAsJson().toString();
+            uaaService.checkVerifiedCode(loginType,phonePrMail,verificationCode).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+        //    reset password
+        router.put("/api/updatePassword").handler(routingContext -> {
+            String phonePrMail = routingContext.getBodyAsJson().toString();
+            String loginType = routingContext.getBodyAsJson().toString();
+            String newPassword=routingContext.getBodyAsJson().toString();
+
+            uaaService.resetPassword(loginType,phonePrMail,newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+        //  update basic user information
+        router.put("/api/updateBasicUserInfo").handler(routingContext -> {
+            BasicUserInfo basicUserInfo = JSON.parseObject(routingContext.getBodyAsJson().toString(), BasicUserInfo.class);
+            System.out.println(basicUserInfo);
+            uaaService.updateBasicUserInfo(basicUserInfo).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+
+
+
     }
 
     private Completable consulInit(JsonObject config) {
