@@ -43,31 +43,22 @@ public interface UaaService {
     /**
      * reset password
      * @param newPassword
-     *@param loginType
-     * @param phonePrMail
+     *@param userAccount
      * @return Single
-     * Author: sunYang
+     * @Author: sunYang
      */
-    Single resetPassword(String loginType,String phonePrMail,String newPassword);
+    Single resetPassword(String userAccount,String newPassword);
 
     /**
      * check verifiedCode
-     * @param phonePrMail
-     * @param verificationCode
-     * @param loginType
+     * @param code
+     * @param content
      * @return Single
-     *  Author: sunYang
+     *  @Author: sunYang
      */
-    Single checkVerifiedCode(String phonePrMail,String verificationCode,String loginType);
+    Single checkVerifiedCode(String code,String content);
 
-    /**
-     * update basic user information
-     *
-     * @param basicUserInfo
-     * @return Single
-     * Author: sunYang
-     */
-    Single updateBasicUserInfo(BasicUserInfo basicUserInfo);
+
 
 
 

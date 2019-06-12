@@ -23,16 +23,6 @@ public class InitConfig {
                      Buffer buf = res.result();
                      verticle.config().mergeIn(buf.toJsonObject());
 
-
-
-
-
-
-
-
-
-
-
                      op.onSuccess(buf);
                  } else {
                      op.onError(new Error("Initialization configuration failed"));

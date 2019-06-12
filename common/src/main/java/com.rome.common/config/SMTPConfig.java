@@ -20,6 +20,6 @@ public class SMTPConfig {
     config.setStarttls(StartTLSOptions.REQUIRED);
     config.setUsername(smtpConfig.getString("userName"));
     config.setPassword(smtpConfig.getString("passWord"));
-    return MailClient.createNonShared(vertx, config);
+      return MailClient.createNonShared(vertx, config);
   }
 }
