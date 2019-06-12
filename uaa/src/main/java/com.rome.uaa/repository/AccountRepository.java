@@ -162,7 +162,7 @@ public class AccountRepository {
                 .filter((updateResult) -> updateResult.getUpdated() > 0)
                 .flatMapSingle(updateResult ->
                     conn.rxQueryWithParams("SELECT user_account,identity_id FROM " +
-                                                "login_view WHERE user_phone = ? or user_mail = ?",
+                            "login_view WHERE user_phone = ? or user_mail = ?",
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
@@ -174,70 +174,50 @@ public class AccountRepository {
 
     /**
      * @param newPassword
-     * @param loginType
-     * @param phonePrMail
+     * @param userAccount
      * @return Single
      * @description reset password
+     * @Author: sunYang
      */
-    public  Single resetPassword(String loginType,String phonePrMail,String newPassword){
+    public Single resetPassword(String userAccount, String newPassword) {
 
-        JsonArray resetPassword=new JsonArray().
+        JsonArray resetPassword = new JsonArray().
             add(newPassword).
-            add(loginType).
-            add(phonePrMail).
-            add(phonePrMail);
+            add(userAccount);
 
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE login_type=? and (user_phone=? or user_mail=?)", resetPassword)
-                .map(updateResult ->{
+            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
+                .map(updateResult -> {
                     if (updateResult.getUpdated() > 0) {
-                       return Single.just("successful");
+                        return Single.just("success");
+                    }else {
+                        return Single.error(new Exception("fail"));
                     }
-                    return Single.error(new Exception("false"));
+
                 }));
 
     }
 
     /**
-     * @param phonePrMail
-     * @param verificationCode
-     * @param loginType
+     * @param code
+     * @param content
      * @return Single
      * @description check verifiedCode
+     * @Author: sunYang
      */
-    public Single checkVerifiedCode(String phonePrMail,String verificationCode,String loginType){
-        return redisClient.rxGet(phonePrMail + loginType).flatMapSingle((resData) -> {
-            if (resData.equals(verificationCode)) {
+    public Single checkVerifiedCode(String code, String content) {
+        return redisClient.rxGet(content + "login").flatMapSingle((resData) -> {
+            if (resData.equals(code)) {
+                redisClient.rxDel(content + code);
                 System.out.println("验证成功");
-                return Single.just("successful");
+                return Single.just("success");
             } else {
-                throw new Error("验证码错误");
+                return Single.error(new Exception("验证码错误"));
             }
 
         });
     }
-
-    /**
-     * update basic user information
-     *
-     * @param basicUserInfo
-     * @return Single
-     * Author: sunYang
-     */
-    public Single updateBasicUserInfo(BasicUserInfo basicUserInfo){
-        JsonArray resetPassword=new JsonArray().add(basicUserInfo);
-
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE login_type=? or user_account=?", resetPassword)
-                .map(updateResult ->{
-                    if (updateResult.getUpdated() > 0) {
-                        return Single.just("successful");
-                    }
-                    return Single.error(new Exception("false"));
-                }));
-    }
-
-
-
 }
+
+
 

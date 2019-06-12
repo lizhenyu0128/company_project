@@ -10,6 +10,7 @@ import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.util.ResponseContent;
+import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.Token;
 import com.rome.uaa.rpc.RpcConfig;
@@ -42,7 +43,8 @@ import java.io.File;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "F:\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
+   // private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -127,11 +129,13 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // user sign up
         router.put("/api/signUp").handler(routingContext -> {
+            System.out.println(111);
             //转成实体类
             UserSignUp userSignUp = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSignUp.class);
             //判断实体类
             ValidatorUtil.checkEntity(userSignUp);
             uaaService.userSignUp(userSignUp).subscribe(result ->
+
                 ResponseContent.success(routingContext, 200, "success"), err -> {
                 if ("1".equals(((Exception) err).getMessage())) {
                     ResponseContent.success(routingContext, 205, "please check you the size of the account or password");
@@ -142,6 +146,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // user sign in
         router.post("/api/login").handler(routingContext -> {
+
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
             System.out.println(userSingIn);
@@ -175,30 +180,26 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
         //    check verifiedCode
-        router.get("/api/checkVerifiedCode/phonePrMail/:phonePrMail/verificationCode/:verificationCode/loginType/:loginType").handler(routingContext -> {
-            String phonePrMail = routingContext.getBodyAsJson().toString();
-            String verificationCode = routingContext.getBodyAsJson().toString();
-            String loginType = routingContext.getBodyAsJson().toString();
-            uaaService.checkVerifiedCode(loginType, phonePrMail, verificationCode).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext, 205, "false"));
+        router.get("/api/user/checkVerifiedCode/code/:code/content/:content").handler(routingContext -> {
+            String code = routingContext.request().getParam("code");
+            String content = routingContext.request().getParam("content");
+            System.out.println(code);
+            System.out.println(content);
+            uaaService.checkVerifiedCode(code, content).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 101, error));
         });
 
         //    reset password
-        router.put("/api/updatePassword").handler(routingContext -> {
-            String phonePrMail = routingContext.getBodyAsJson().toString();
-            String loginType = routingContext.getBodyAsJson().toString();
-            String newPassword = routingContext.getBodyAsJson().toString();
-
-            uaaService.resetPassword(loginType, phonePrMail, newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext, 205, "false"));
+        router.put("/api/user/resetPassword").handler(routingContext -> {
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String newPassword =routingContext.getBodyAsJson().getString("newPassword");
+            System.out.println(newPassword);
+            System.out.println(userAccount);
+            uaaService.resetPassword(userAccount , newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseJSON.successJson(routingContext, 102));
         });
-
-        //  update basic user information
-        router.put("/api/updateBasicUserInfo").handler(routingContext -> {
-            BasicUserInfo basicUserInfo = JSON.parseObject(routingContext.getBodyAsJson().toString(), BasicUserInfo.class);
-            System.out.println(basicUserInfo);
-            uaaService.updateBasicUserInfo(basicUserInfo).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext, 205, "false"));
+        router.put("/api/test11").handler(routingContext -> {
+            ResponseJSON.successJson(routingContext, 200);
         });
 
 
