@@ -40,13 +40,36 @@ public interface UaaService {
      */
     Single checkIdentity(String token);
 
-    Single resetPassword(String phonePrMail, String codeType, String verificationCode);
+    /**
+     * reset password
+     * @param newPassword
+     *@param loginType
+     * @param phonePrMail
+     * @return Single
+     * Author: sunYang
+     */
+    Single resetPassword(String loginType,String phonePrMail,String newPassword);
+
+    /**
+     * check verifiedCode
+     * @param phonePrMail
+     * @param verificationCode
+     * @param loginType
+     * @return Single
+     *  Author: sunYang
+     */
+    Single checkVerifiedCode(String phonePrMail,String verificationCode,String loginType);
 
     /**
      * update basic user information
      *
      * @param basicUserInfo
-     * @return
+     * @return Single
+     * Author: sunYang
      */
     Single updateBasicUserInfo(BasicUserInfo basicUserInfo);
+
+
+
+
 }

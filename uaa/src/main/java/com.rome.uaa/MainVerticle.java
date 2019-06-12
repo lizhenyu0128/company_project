@@ -2,6 +2,7 @@ package com.rome.uaa;
 
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.rome.common.config.InitConfig;
 import com.rome.common.constant.UaaConsts;
 import com.rome.common.dbutil.PostgresqlPool;
@@ -9,6 +10,8 @@ import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.util.ResponseContent;
+import com.rome.uaa.entity.BasicUserInfo;
+import com.rome.uaa.entity.Token;
 import com.rome.uaa.rpc.RpcConfig;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
@@ -19,6 +22,7 @@ import com.rome.uaa.service.UaaServiceImpl;
 import io.grpc.ManagedChannel;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
@@ -87,7 +91,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         this.config().getJsonObject("ConsulServer").put(uaa01.getString("ServiceName"), uaa01);
         this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
         Integer port = uaa01.getInteger("ServicePort");
-        
+
         //message channel
         ManagedChannel messageChannel = RpcConfig.startRpcClient(vertx, message01.getString("ServiceAddress"), message01.getInteger("ServicePort"));
 
@@ -104,15 +108,22 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             .handler(routingContext -> {
                 String token;
                 token = routingContext.request().headers().get("token");
+
                 if (token == null) {
                     ResponseContent.success(routingContext, 205, "false");
                 }
-                uaaService.checkIdentity(token).subscribe(res -> routingContext.next()
-                    , err -> ResponseContent.success(routingContext, 205, "false"));
+                uaaService.checkIdentity(token).subscribe(res -> {
+                    routingContext.put("token", res.toString());
+                    routingContext.next();
+                }, err -> ResponseContent.success(routingContext, 205, "false"));
             });
 
         // protect router demo
-        router.get("/api/user/sss").handler(routingContext -> ResponseContent.success(routingContext, 205, "来到以后方法"));
+        router.get("/api/user/sss").handler(routingContext -> {
+            Token token = JSON.parseObject(routingContext.get("token"), Token.class);
+            System.out.println(token.getUser_account());
+            ResponseContent.success(routingContext, 205, "来到以后方法");
+        });
 
         // user sign up
         router.put("/api/signUp").handler(routingContext -> {
@@ -162,6 +173,35 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 });
             }
         });
+
+        //    check verifiedCode
+        router.get("/api/checkVerifiedCode/phonePrMail/:phonePrMail/verificationCode/:verificationCode/loginType/:loginType").handler(routingContext -> {
+            String phonePrMail = routingContext.getBodyAsJson().toString();
+            String verificationCode = routingContext.getBodyAsJson().toString();
+            String loginType = routingContext.getBodyAsJson().toString();
+            uaaService.checkVerifiedCode(loginType, phonePrMail, verificationCode).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+        //    reset password
+        router.put("/api/updatePassword").handler(routingContext -> {
+            String phonePrMail = routingContext.getBodyAsJson().toString();
+            String loginType = routingContext.getBodyAsJson().toString();
+            String newPassword = routingContext.getBodyAsJson().toString();
+
+            uaaService.resetPassword(loginType, phonePrMail, newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+        //  update basic user information
+        router.put("/api/updateBasicUserInfo").handler(routingContext -> {
+            BasicUserInfo basicUserInfo = JSON.parseObject(routingContext.getBodyAsJson().toString(), BasicUserInfo.class);
+            System.out.println(basicUserInfo);
+            uaaService.updateBasicUserInfo(basicUserInfo).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+                , error -> ResponseContent.success(routingContext, 205, "false"));
+        });
+
+
     }
 
     private Completable consulInit(JsonObject config) {

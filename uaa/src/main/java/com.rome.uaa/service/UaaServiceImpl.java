@@ -98,12 +98,24 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
-    public Single resetPassword(String phonePrMail, String codeType, String verificationCode) {
-        return null;
+    public Single resetPassword(String loginType,String phonePrMail,String newPassword) {
+        return accountRepository.resetPassword(loginType,phonePrMail,newPassword).doOnError(err ->
+            logger.info(((Exception) err).getMessage()));
+    }
+
+    @Override
+    public  Single checkVerifiedCode(String phonePrMail,String verificationCode,String loginType){
+        return accountRepository.checkVerifiedCode(phonePrMail,verificationCode,loginType).doOnError(err ->
+            logger.info(((Exception) err).getMessage()));
     }
 
     @Override
     public Single updateBasicUserInfo(BasicUserInfo basicUserInfo) {
-        return null;
+        return accountRepository.updateBasicUserInfo(basicUserInfo).doOnError(err ->
+            logger.info(((Exception) err).getMessage()));
     }
+
+
+
+
 }
