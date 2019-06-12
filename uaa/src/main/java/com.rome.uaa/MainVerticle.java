@@ -202,6 +202,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
 
+
+
     }
 
     private Completable consulInit(JsonObject config) {
