@@ -1,17 +1,12 @@
 package com.rome.uaa.repository;
 
-import com.alibaba.fastjson.JSONObject;
-import com.rome.common.util.smsutil.*;
-import com.rome.common.util.VerificationCode;
 import com.rome.uaa.entity.UserSingIn;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.jwt.JWTOptions;
-import io.vertx.ext.mail.MailMessage;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
