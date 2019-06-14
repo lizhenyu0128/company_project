@@ -180,12 +180,13 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
         //    check verifiedCode
-        router.get("/api/user/checkVerifiedCode/code/:code/content/:content").handler(routingContext -> {
+        router.get("/api/user/checkVerifiedCode/code/:code/content/:content/useType/:useType").handler(routingContext -> {
             String code = routingContext.request().getParam("code");
             String content = routingContext.request().getParam("content");
+            String useType =routingContext.request().getParam("useType");
             System.out.println(code);
             System.out.println(content);
-            uaaService.checkVerifiedCode(code, content).subscribe(result -> ResponseContent.success(routingContext, 200, result)
+            uaaService.checkVerifiedCode(code, content,useType).subscribe(result -> ResponseContent.success(routingContext, 200, result)
                 , error -> ResponseContent.success(routingContext,205,"false") );
         });
 

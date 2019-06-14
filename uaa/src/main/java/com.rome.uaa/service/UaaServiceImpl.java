@@ -104,8 +104,8 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
-    public  Single checkVerifiedCode(String code,String content){
-        return accountRepository.checkVerifiedCode(code,content).doOnError(err ->
+    public  Single checkVerifiedCode(String code,String content,String useType){
+        return accountRepository.checkVerifiedCode(code,content,useType).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
 

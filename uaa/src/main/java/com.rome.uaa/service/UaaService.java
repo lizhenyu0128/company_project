@@ -53,10 +53,11 @@ public interface UaaService {
      * check verifiedCode
      * @param code
      * @param content
+     * @param useType
      * @return Single
      *  @Author: sunYang
      */
-    Single checkVerifiedCode(String code,String content);
+    Single checkVerifiedCode(String code,String content,String useType);
 
 
 
