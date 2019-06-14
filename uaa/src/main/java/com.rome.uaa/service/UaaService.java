@@ -4,6 +4,7 @@ import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import io.reactivex.Completable;
+import io.reactivex.Maybe;
 import io.reactivex.Single;
 
 
@@ -43,22 +44,13 @@ public interface UaaService {
     /**
      * reset password
      * @param newPassword
-     *@param userAccount
+     * @param userAccount
+     * @param code
+     * @param content
      * @return Single
      * @Author: sunYang
      */
-    Single resetPassword(String userAccount,String newPassword);
-
-    /**
-     * check verifiedCode
-     * @param code
-     * @param content
-     * @param useType
-     * @return Single
-     *  @Author: sunYang
-     */
-    Single checkVerifiedCode(String code,String content,String useType);
-
+    Single resetPassword(String userAccount,String newPassword,String code,String content);
 
 
 

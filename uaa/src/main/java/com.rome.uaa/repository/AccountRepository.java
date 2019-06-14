@@ -3,6 +3,7 @@ package com.rome.uaa.repository;
 
 import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSingIn;
+import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -180,45 +181,33 @@ public class AccountRepository {
      * @description reset password
      * @Author: sunYang
      */
-    public Single resetPassword(String userAccount, String newPassword) {
-
+    public Single resetPassword(String userAccount, String newPassword,String code,String content) {
+        System.out.println(content + "resetPassword");
         JsonArray resetPassword = new JsonArray().
             add(newPassword).
             add(userAccount);
-
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
-                .map(updateResult -> {
-                    if (updateResult.getUpdated() > 0) {
-                        return Single.just("success");
-                    }else {
-                        return Single.error(new Exception("fail"));
-                    }
-
-                }));
-
-    }
-
-    /**
-     * @param code
-     * @param content
-     * @param useType
-     * @return Single
-     * @description check verifiedCode
-     * @Author: sunYang
-     */
-    public Single checkVerifiedCode(String code, String content,String useType) {
-        return redisClient.rxGet(content + useType).flatMapSingle((resData) -> {
+        return redisClient.rxGet(content + "resetPassword").flatMapSingle(resData -> {
             if (resData.equals(code)) {
-                redisClient.rxDel(content + useType).subscribe();
-                System.out.println("验证成功");
-                return Single.just("success");
+                redisClient.rxDel(content + "resetPassword").subscribe();
+                return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+                    conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
+                        .flatMap(updateResult -> {
+                            if (updateResult.getUpdated() > 0) {
+                                System.out.println("大大");
+                                return Single.just(true);
+                            } else {
+                                return Single.just(false);
+                            }
+                        }));
             } else {
-                return Single.error(new Exception("验证码错误"));
+                System.out.println("11111111");
+                System.out.println("asdadassd");
+                redisClient.rxDel(content + "resetPassword").subscribe();
+                return Single.just(false);
             }
-
         });
     }
+
 }
 
 
