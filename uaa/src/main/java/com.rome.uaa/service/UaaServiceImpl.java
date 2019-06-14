@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.ext.auth.User;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import org.mindrot.jbcrypt.BCrypt;
