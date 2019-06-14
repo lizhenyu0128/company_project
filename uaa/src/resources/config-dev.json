@@ -10,7 +10,7 @@
         "host": "localhost",
         "driver_class": "org.postgresql.Driver",
         "username": "postgres",
-        "password": "123456",
+        "password": "",
         "database": "company_db"
     },
     "ConfigSMTP": {

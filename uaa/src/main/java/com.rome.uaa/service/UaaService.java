@@ -5,6 +5,7 @@ import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import io.reactivex.Completable;
 import io.reactivex.Single;
+import io.vertx.reactivex.ext.web.RoutingContext;
 
 
 /**
@@ -59,8 +60,5 @@ public interface UaaService {
     Single checkVerifiedCode(String code,String content);
 
 
-
-
-
-
+    RoutingContext bbb(RoutingContext routingContext);
 }

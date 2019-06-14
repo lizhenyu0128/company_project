@@ -1,11 +1,9 @@
 package com.rome.uaa.service;
 
-import com.alibaba.fastjson.JSONObject;
-import com.rome.uaa.entity.BasicUserInfo;
+import com.alibaba.fastjson.JSON;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -13,6 +11,7 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
+import io.vertx.reactivex.ext.web.RoutingContext;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,8 +108,10 @@ public class UaaServiceImpl implements UaaService {
             logger.info(((Exception) err).getMessage()));
     }
 
-
-
+    @Override
+    public RoutingContext bbb(RoutingContext routingContext) {
+        return routingContext;
+    }
 
 
 }

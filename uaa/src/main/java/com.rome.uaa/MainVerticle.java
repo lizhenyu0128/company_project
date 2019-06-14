@@ -43,8 +43,8 @@ import java.io.File;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-    private final static String CONFIG_PATH = "F:\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
-   // private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    //private final static String CONFIG_PATH = "F:\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -198,9 +198,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             uaaService.resetPassword(userAccount , newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
                 , error -> ResponseJSON.successJson(routingContext, 102));
         });
-        router.put("/api/test11").handler(routingContext -> {
-            ResponseJSON.successJson(routingContext, 200);
-        });
+        router.put("/api/test11").handler(uaaService::bbb);
 
 
 
