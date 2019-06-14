@@ -204,7 +204,7 @@ public class AccountRepository {
      * @param content
      * @return Single
      * @description check verifiedCode
-     * @Author: sunYang
+     * @Author: sunYang1
      */
     public Single checkVerifiedCode(String code, String content) {
         return redisClient.rxGet(content + "login").flatMapSingle((resData) -> {
