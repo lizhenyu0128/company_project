@@ -167,8 +167,9 @@ public class AccountRepository {
                 "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=? or user_mail=?", loginParam)
                 .filter((updateResult) -> updateResult.getUpdated() > 0)
                 .flatMapSingle(updateResult ->
-                    conn.rxQueryWithParams("SELECT user_account,identity_id FROM " +
-                            "login_view WHERE user_phone = ? or user_mail = ?",
+                    conn.rxQueryWithParams("SELECT user_account,b.identity_id FROM " +
+                            "basic_account a LEFT JOIN \"identity\" b ON a.user_type = b.identity_id WHERE " +
+                            "a.user_phone = ? or a.user_mail = ?",
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
