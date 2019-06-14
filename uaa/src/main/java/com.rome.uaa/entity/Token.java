@@ -9,9 +9,9 @@ import lombok.Data;
  */
 @Data
 public class Token {
-    private int identity_id;
+    private int identityId;
     private String iss;
-    private String user_account;
+    private String account;
     private long exp;
     private String iat;
 }

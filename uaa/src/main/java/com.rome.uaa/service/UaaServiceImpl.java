@@ -1,6 +1,5 @@
 package com.rome.uaa.service;
 
-import com.alibaba.fastjson.JSON;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
@@ -98,21 +97,18 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
-    public Single resetPassword(String userAccount,String newPassword) {
-        return accountRepository.resetPassword(userAccount,newPassword).doOnError(err ->
-            logger.info(((Exception) err).getMessage()));
-    }
+    public Single resetPassword(String userAccount,String newPassword,String code,String content) {
+        return accountRepository.resetPassword(userAccount,newPassword,code,content).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+            });
 
-    @Override
-    public  Single checkVerifiedCode(String code,String content,String useType){
-        return accountRepository.checkVerifiedCode(code,content,useType).doOnError(err ->
-            logger.info(((Exception) err).getMessage()));
     }
 
     @Override
     public RoutingContext bbb(RoutingContext routingContext) {
         return routingContext;
     }
+
 
 
 }

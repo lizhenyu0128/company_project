@@ -3,6 +3,7 @@ package com.rome.uaa.repository;
 
 import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSingIn;
+import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -78,6 +79,7 @@ public class AccountRepository {
                     return Single.error(new Exception("用户不存在"));
                 }
                 JsonObject loginView = res.getRows().get(0);
+                System.out.println(loginView);
                 if (BCrypt.checkpw(u.getUserPassword(), loginView.getString("user_password"))) {
                     System.out.println("用户存在密码正确");
                     //更新登陆状态
@@ -92,10 +94,11 @@ public class AccountRepository {
                             if (updateResult.getUpdated() > 0) {
                                 //更新jwt返回
                                 JsonObject jwtParam = new JsonObject()
-                                    .put("account", loginView.getValue("userAccount"))
+                                    .put("account", loginView.getValue("user_account"))
                                     //自 定义参数
-                                    .put("identityId", loginView.getValue("identityId"));
+                                    .put("identityId", loginView.getValue("identity_id"));
                                 return sendToken(jwtParam);
+
                             }
                             return Single.error(new Exception("false"));
                         });
@@ -106,6 +109,7 @@ public class AccountRepository {
     }
 
     private Single<String> sendToken(JsonObject object) {
+        System.out.println(object);
         //   jwt 需要传userAccount identityId
         JWTAuth provide = JWTAuth.create(vertx, new JWTAuthOptions()
             .addPubSecKey(new PubSecKeyOptions()
@@ -180,45 +184,34 @@ public class AccountRepository {
      * @description reset password
      * @Author: sunYang
      */
-    public Single resetPassword(String userAccount, String newPassword) {
-
+    public Single resetPassword(String userAccount, String newPassword,String code,String content) {
+        System.out.println(content + "resetPassword");
+        System.out.println(content + userAccount);
         JsonArray resetPassword = new JsonArray().
             add(newPassword).
             add(userAccount);
-
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
-                .map(updateResult -> {
-                    if (updateResult.getUpdated() > 0) {
-                        return Single.just("success");
-                    }else {
-                        return Single.error(new Exception("fail"));
-                    }
-
-                }));
-
-    }
-
-    /**
-     * @param code
-     * @param content
-     * @param useType
-     * @return Single
-     * @description check verifiedCode
-     * @Author: sunYang
-     */
-    public Single checkVerifiedCode(String code, String content,String useType) {
-        return redisClient.rxGet(content + useType).flatMapSingle((resData) -> {
+        return redisClient.rxGet(content + "resetPassword").flatMapSingle(resData -> {
             if (resData.equals(code)) {
-                redisClient.rxDel(content + useType).subscribe();
-                System.out.println("验证成功");
-                return Single.just("success");
+                redisClient.rxDel(content + "resetPassword").subscribe();
+                return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+                    conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
+                        .flatMap(updateResult -> {
+                            if (updateResult.getUpdated() > 0) {
+                                System.out.println("大大");
+                                return Single.just(true);
+                            } else {
+                                return Single.just(false);
+                            }
+                        }));
             } else {
-                return Single.error(new Exception("验证码错误"));
+                System.out.println("11111111");
+                System.out.println("asdadassd");
+                redisClient.rxDel(content + "resetPassword").subscribe();
+                return Single.just(false);
             }
-
         });
     }
+
 }
 
 

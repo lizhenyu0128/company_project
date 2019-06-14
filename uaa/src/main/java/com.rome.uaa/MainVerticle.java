@@ -9,9 +9,7 @@ import com.rome.common.dbutil.PostgresqlPool;
 import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
-import com.rome.common.util.ResponseContent;
 import com.rome.common.util.ResponseJSON;
-import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.Token;
 import com.rome.uaa.rpc.RpcConfig;
 import com.rome.uaa.util.ValidatorUtil;
@@ -45,6 +43,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
     //private final static String CONFIG_PATH = "F:\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
     private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -112,19 +111,19 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 token = routingContext.request().headers().get("token");
 
                 if (token == null) {
-                    ResponseContent.success(routingContext, 205, "false");
+                    ResponseJSON.falseJson(routingContext, "验证错误");
                 }
                 uaaService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
                     routingContext.next();
-                }, err -> ResponseContent.success(routingContext, 205, "false"));
+                }, err -> ResponseJSON.errJson(routingContext));
             });
 
         // protect router demo
         router.get("/api/user/sss").handler(routingContext -> {
             Token token = JSON.parseObject(routingContext.get("token"), Token.class);
-            System.out.println(token.getUser_account());
-            ResponseContent.success(routingContext, 205, "来到以后方法");
+            System.out.println(token.getAccount());
+            ResponseJSON.successJson(routingContext, "来到以后方法");
         });
 
         // user sign up
@@ -135,12 +134,11 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             //判断实体类
             ValidatorUtil.checkEntity(userSignUp);
             uaaService.userSignUp(userSignUp).subscribe(result ->
-
-                ResponseContent.success(routingContext, 200, "success"), err -> {
+                ResponseJSON.successJson(routingContext), err -> {
                 if ("1".equals(((Exception) err).getMessage())) {
-                    ResponseContent.success(routingContext, 205, "please check you the size of the account or password");
+                    ResponseJSON.falseJson(routingContext);
                 }
-                ResponseContent.success(routingContext, 205, "false");
+                ResponseJSON.falseJson(routingContext);
             });
         });
 
@@ -150,8 +148,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext, 205, "false"));
+            uaaService.userLogin(userSingIn).subscribe(result -> ResponseJSON.successJson(routingContext, result, "登陆成功")
+                , error -> ResponseJSON.falseJson(routingContext, "登陆失败"));
         });
 
         // send SMS or mail
@@ -161,7 +159,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String useType = routingContext.request().getParam("useType");
             String content = routingContext.request().getParam("content");
             if (!UaaConsts.MESSAGE_TYPE_MAIL.equals(messageType) && !UaaConsts.MESSAGE_TYPE_PHONE.equals(messageType)) {
-                ResponseContent.success(routingContext, 200, "false");
+                ResponseJSON.falseJson(routingContext);
             } else {
                 VerificationCodeServiceGrpc.VerificationCodeServiceVertxStub stub = VerificationCodeServiceGrpc.newVertxStub(messageChannel);
                 VerificationCodeReq request = VerificationCodeReq.newBuilder()
@@ -171,43 +169,36 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     .build();
                 stub.getVerificationCode(request, ar -> {
                     if (ar.succeeded()) {
-                        ResponseContent.success(routingContext, 200, ar.result().getResultJson());
+                        ResponseJSON.successJson(routingContext,"发送成功");
                     } else {
-                        ResponseContent.success(routingContext, 200, "false");
+                        ResponseJSON.falseJson(routingContext, "发送失败");
                     }
                 });
             }
         });
 
-        //    check verifiedCode
-        router.get("/api/user/checkVerifiedCode/code/:code/content/:content/useType/:useType").handler(routingContext -> {
-            String code = routingContext.request().getParam("code");
-            String content = routingContext.request().getParam("content");
-            String useType =routingContext.request().getParam("useType");
-            System.out.println(code);
-            System.out.println(content);
-            uaaService.checkVerifiedCode(code, content,useType).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext,205,"false") );
-        });
-
         //    reset password
         router.put("/api/user/resetPassword").handler(routingContext -> {
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String newPassword =routingContext.getBodyAsJson().getString("newPassword");
-            System.out.println(newPassword);
+            System.out.println(routingContext.get("token").toString());
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getAccount();
             System.out.println(userAccount);
-            uaaService.resetPassword(userAccount , newPassword).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseJSON.successJson(routingContext, 102));
+            String newPassword = routingContext.getBodyAsJson().getString("newPassword");
+            String code = routingContext.getBodyAsJson().getString("code");
+            String phone = routingContext.getBodyAsJson().getString("phone");
+            uaaService.resetPassword(userAccount, newPassword,code,phone).subscribe(result ->{
+                    System.out.println(result.toString()+"23423424");
+                    if ((Boolean) result) {
+                        ResponseJSON.successJson(routingContext, "修改成功");
+                    } else {
+                        ResponseJSON.falseJson(routingContext, "修改失败");
+                    }
+                }
+                , error -> ResponseJSON.errJson(routingContext));
         });
-        router.put("/api/test11").handler(uaaService::bbb);
-
-
-
-
+        router.put("/api/test11").handler(ResponseJSON::successJson);
     }
 
     private Completable consulInit(JsonObject config) {
-
         //consol发现服务
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
             new JsonObject()

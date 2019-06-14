@@ -9,7 +9,7 @@
     "PostgreSQL": {
         "host": "localhost",
         "driver_class": "org.postgresql.Driver",
-        "username": "postgres",
+        "username": "lizhenyu",
         "password": "",
         "database": "company_db"
     },
