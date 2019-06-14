@@ -69,11 +69,12 @@ public class AccountRepository {
             return userLoginByCode(u);
         }
         JsonArray loginParam = new JsonArray();
-        loginParam.add(u.getUserMail())
-            .add(u.getUserPhone());
+        loginParam.add(u.getUserAccount());
         System.out.println(loginParam);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> conn.rxQueryWithParams(
-            "SELECT *,user FROM login_view WHERE (user_mail=? or user_phone =? ) and use_status=1 ", loginParam)
+            "SELECT a.user_account,a.use_status,a.user_mail,a.user_phone,a.user_password,b.identity_id FROM " +
+                "basic_account a LEFT JOIN \"identity\" b ON a.user_type=b.identity_id WHERE " +
+                "user_account=?", loginParam)
             .flatMap(res -> {
                 if (res.getRows().isEmpty()) {
                     return Single.error(new Exception("用户不存在"));
@@ -184,7 +185,7 @@ public class AccountRepository {
      * @description reset password
      * @Author: sunYang
      */
-    public Single resetPassword(String userAccount, String newPassword,String code,String content) {
+    public Single resetPassword(String userAccount, String newPassword, String code, String content) {
         System.out.println(content + "resetPassword");
         System.out.println(content + userAccount);
         JsonArray resetPassword = new JsonArray().

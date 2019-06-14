@@ -13,6 +13,8 @@ import org.hibernate.validator.constraints.Length;
 @Data
 public class UserSingIn {
   @NonNull
+  private String userAccount;
+  @NonNull
   private String loginType;
   @NonNull
   @Length(min = 8, max = 18, message = "密码长度必须为8-18")
