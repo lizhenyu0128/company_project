@@ -122,7 +122,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         // protect router demo
         router.get("/api/user/sss").handler(routingContext -> {
             Token token = JSON.parseObject(routingContext.get("token"), Token.class);
-            System.out.println(token.getAccount());
+            System.out.println(token.getUser_account());
             ResponseJSON.successJson(routingContext, "来到以后方法");
         });
 
@@ -180,7 +180,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         //    reset password
         router.put("/api/user/resetPassword").handler(routingContext -> {
             System.out.println(routingContext.get("token").toString());
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getAccount();
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             System.out.println(userAccount);
             String newPassword = routingContext.getBodyAsJson().getString("newPassword");
             String code = routingContext.getBodyAsJson().getString("code");

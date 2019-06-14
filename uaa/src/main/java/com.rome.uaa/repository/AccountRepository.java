@@ -95,9 +95,10 @@ public class AccountRepository {
                             if (updateResult.getUpdated() > 0) {
                                 //更新jwt返回
                                 JsonObject jwtParam = new JsonObject()
-                                    .put("account", loginView.getValue("user_account"))
+                                    .put("user_account", loginView.getValue("user_account"))
                                     //自 定义参数
-                                    .put("identityId", loginView.getValue("identity_id"));
+                                    .put("identity_id", loginView.getValue("identity_id"));
+                                System.out.println(jwtParam+"库卡技术");
                                 return sendToken(jwtParam);
 
                             }
@@ -173,7 +174,7 @@ public class AccountRepository {
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
-                            System.out.println(jwtObj);
+                            System.out.println(jwtObj+"哈哈哈");
                             return sendToken(jwtObj);
                         }));
         }));
