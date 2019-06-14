@@ -202,14 +202,15 @@ public class AccountRepository {
     /**
      * @param code
      * @param content
+     * @param useType
      * @return Single
      * @description check verifiedCode
-     * @Author: sunYang1
+     * @Author: sunYang
      */
-    public Single checkVerifiedCode(String code, String content) {
-        return redisClient.rxGet(content + "login").flatMapSingle((resData) -> {
+    public Single checkVerifiedCode(String code, String content,String useType) {
+        return redisClient.rxGet(content + useType).flatMapSingle((resData) -> {
             if (resData.equals(code)) {
-                redisClient.rxDel(content + "login").subscribe();
+                redisClient.rxDel(content + useType).subscribe();
                 System.out.println("验证成功");
                 return Single.just("success");
             } else {
