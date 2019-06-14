@@ -186,7 +186,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             System.out.println(code);
             System.out.println(content);
             uaaService.checkVerifiedCode(code, content).subscribe(result -> ResponseContent.success(routingContext, 200, result)
-                , error -> ResponseContent.success(routingContext, 101, error));
+                , error -> ResponseContent.success(routingContext,205,"false") );
         });
 
         //    reset password
