@@ -143,6 +143,7 @@ public class AccountRepository {
         System.out.println(phoneOrMail + loginType);
         return redisClient.rxGet(phoneOrMail + "login").filter((resData) -> {
             if (resData.equals(code)) {
+                redisClient.rxDel(phoneOrMail + "login").subscribe();
                 System.out.println("哈哈哈哈哈");
                 return true;
             } else {
@@ -208,7 +209,7 @@ public class AccountRepository {
     public Single checkVerifiedCode(String code, String content) {
         return redisClient.rxGet(content + "login").flatMapSingle((resData) -> {
             if (resData.equals(code)) {
-                redisClient.rxDel(content + code);
+                redisClient.rxDel(content + "login").subscribe();
                 System.out.println("验证成功");
                 return Single.just("success");
             } else {
