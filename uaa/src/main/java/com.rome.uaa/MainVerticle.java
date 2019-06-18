@@ -2,16 +2,17 @@ package com.rome.uaa;
 
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.rome.common.config.InitConfig;
+import com.rome.common.config.RpcConfig;
 import com.rome.common.constant.UaaConsts;
 import com.rome.common.dbutil.PostgresqlPool;
 import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
+import com.rome.common.service.CommonService;
+import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.entity.Token;
-import com.rome.uaa.rpc.RpcConfig;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
 import com.rome.uaa.entity.UserSingIn;
@@ -49,6 +50,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private MailClient mailClient;
     private RedisClient redisClient;
     private UaaService uaaService;
+    private CommonService commonService;
     private ServiceDiscovery discovery;
 
     @Override
@@ -74,6 +76,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
                 // 配置传递
                 uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                commonService = new CommonServiceImpl(vertx);
 
                 routerController();
             });
@@ -92,7 +95,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         this.config().getJsonObject("ConsulServer").put(uaa01.getString("ServiceName"), uaa01);
         this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
         Integer port = uaa01.getInteger("ServicePort");
-
         //message channel
         ManagedChannel messageChannel = RpcConfig.startRpcClient(vertx, message01.getString("ServiceAddress"), message01.getInteger("ServicePort"));
 
@@ -113,7 +115,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 if (token == null) {
                     ResponseJSON.falseJson(routingContext, "验证错误");
                 }
-                uaaService.checkIdentity(token).subscribe(res -> {
+                commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
                     routingContext.next();
                 }, err -> ResponseJSON.errJson(routingContext));
@@ -169,7 +171,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     .build();
                 stub.getVerificationCode(request, ar -> {
                     if (ar.succeeded()) {
-                        ResponseJSON.successJson(routingContext,"发送成功");
+                        ResponseJSON.successJson(routingContext, "发送成功");
                     } else {
                         ResponseJSON.falseJson(routingContext, "发送失败");
                     }
@@ -185,8 +187,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String newPassword = routingContext.getBodyAsJson().getString("newPassword");
             String code = routingContext.getBodyAsJson().getString("code");
             String phone = routingContext.getBodyAsJson().getString("phone");
-            uaaService.resetPassword(userAccount, newPassword,code,phone).subscribe(result ->{
-                    System.out.println(result.toString()+"23423424");
+            uaaService.resetPassword(userAccount, newPassword, code, phone).subscribe(result -> {
+                    System.out.println(result.toString() + "23423424");
                     if ((Boolean) result) {
                         ResponseJSON.successJson(routingContext, "修改成功");
                     } else {

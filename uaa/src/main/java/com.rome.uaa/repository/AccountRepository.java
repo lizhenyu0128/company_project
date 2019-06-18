@@ -190,8 +190,9 @@ public class AccountRepository {
     public Single resetPassword(String userAccount, String newPassword, String code, String content) {
         System.out.println(content + "resetPassword");
         System.out.println(content + userAccount);
+        String encryptPassWord =  BCrypt.hashpw(newPassword, BCrypt.gensalt());
         JsonArray resetPassword = new JsonArray().
-            add(newPassword).
+            add(encryptPassWord).
             add(userAccount);
         return redisClient.rxGet(content + "resetPassword").flatMapSingle(resData -> {
             if (resData.equals(code)) {
@@ -200,15 +201,12 @@ public class AccountRepository {
                     conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
                         .flatMap(updateResult -> {
                             if (updateResult.getUpdated() > 0) {
-                                System.out.println("大大");
                                 return Single.just(true);
                             } else {
                                 return Single.just(false);
                             }
                         }));
             } else {
-                System.out.println("11111111");
-                System.out.println("asdadassd");
                 redisClient.rxDel(content + "resetPassword").subscribe();
                 return Single.just(false);
             }

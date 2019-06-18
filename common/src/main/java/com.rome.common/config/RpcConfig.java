@@ -1,4 +1,4 @@
-package com.rome.uaa.rpc;
+package com.rome.common.config;
 
 import io.grpc.ManagedChannel;
 import io.vertx.grpc.VertxChannelBuilder;
@@ -14,7 +14,7 @@ import io.vertx.reactivex.core.Vertx;
 public class RpcConfig {
 
     public static ManagedChannel startRpcClient(Vertx vertx,String host, int port) {
-        System.out.println("客户端启动");
+        System.out.println("客户端启动"+port);
         return VertxChannelBuilder
             .forAddress(vertx.getDelegate(), host, port)
             .usePlaintext(true)

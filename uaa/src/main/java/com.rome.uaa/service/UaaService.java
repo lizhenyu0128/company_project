@@ -35,14 +35,6 @@ public interface UaaService {
     Single userLogin(UserSingIn userSingIn);
 
     /**
-     * check identity by jwt
-     *
-     * @param token
-     * @return Single
-     */
-    Single checkIdentity(String token);
-
-    /**
      * reset password
      * @param newPassword
      * @param userAccount

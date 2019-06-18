@@ -85,18 +85,6 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
-    public Single checkIdentity(String token) {
-        return Single.create(emit ->
-            provide.authenticate(new JsonObject().put("jwt", token), auth -> {
-                if (auth.succeeded()) {
-                    emit.onSuccess(auth.result().principal());
-                } else {
-                    emit.onError(new RuntimeException("false"));
-                }
-            })).doOnError(err -> logger.info(err.getMessage()));
-    }
-
-    @Override
     public Single resetPassword(String userAccount,String newPassword,String code,String content) {
         return accountRepository.resetPassword(userAccount,newPassword,code,content).doOnError(err ->{
             logger.info(((Exception) err).getMessage());
