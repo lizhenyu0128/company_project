@@ -197,7 +197,17 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 }
                 , error -> ResponseJSON.errJson(routingContext));
         });
-        router.put("/api/test11").handler(ResponseJSON::successJson);
+
+        // set payPassword
+        router.put("/api/user/setPayPassword").handler(routingContext -> {
+            String payPassword=routingContext.getBodyAsJson().getString("payPassword");
+
+        });
+
+
+
+        // update payPassword
+
     }
 
     private Completable consulInit(JsonObject config) {
