@@ -22,7 +22,6 @@ import com.rome.uaa.service.UaaServiceImpl;
 import io.grpc.ManagedChannel;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
