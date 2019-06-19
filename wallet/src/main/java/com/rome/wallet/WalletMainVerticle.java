@@ -5,6 +5,7 @@ import com.rome.common.config.InitConfig;
 import com.rome.common.config.RpcConfig;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.dbutil.PostgresqlPool;
+import com.rome.common.entity.Token;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
