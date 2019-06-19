@@ -51,7 +51,7 @@ public class AccountRepository {
     public Single userSignUp(JsonArray singUpParam) {
         System.out.println(singUpParam);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("INSERT INTO basic_account VALUES(?,?,?,?,2,?,?," +
+            conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,user_type,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude)VALUES(?,?,?,?,2,?,?," +
                 "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?)", singUpParam)
                 .map(singUpRes ->
                     "success sign up"));

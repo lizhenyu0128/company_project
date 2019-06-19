@@ -15,4 +15,6 @@ public interface CommonService {
      * @return Single
      */
     Single checkIdentity(String token);
+
+
 }
