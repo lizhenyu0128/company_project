@@ -1,4 +1,4 @@
-package com.rome.uaa.entity;
+package com.rome.common.entity;
 
 import lombok.Data;
 
