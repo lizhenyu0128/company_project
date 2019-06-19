@@ -8,7 +8,6 @@ import com.rome.common.dbutil.PostgresqlPool;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
-import com.rome.uaa.entity.Token;
 import com.rome.wallet.repostiory.WalletNativeRepository;
 import com.rome.wallet.service.WalletNativeService;
 import com.rome.wallet.service.WalletNativeServiceImpl;
