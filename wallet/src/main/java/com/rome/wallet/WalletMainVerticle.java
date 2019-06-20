@@ -151,11 +151,15 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         });
 
         //get transaction coin
+        router.get("/api/wallet/coin/:coinPair/transaction").handler(routingContext -> {
+            String account = JSON.parseObject(routingContext.get("coinPair"), Token.class).getUser_account();
+
+        });
 
 
         ///////////////
-        // transaction coin
 
+        // transaction coin
         router.post("/api/wallet/transaction/:coinType").handler(routingContext -> {
             String coinType = routingContext.request().getParam("coinType");
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
@@ -192,7 +196,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
 
     private Completable consulInit(JsonObject config) {
-        //consol发现服务
+        //consul发现服务
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
             new JsonObject()
                 //发现远端注册中心
