@@ -8,6 +8,7 @@ import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
 import io.vertx.reactivex.redis.RedisClient;
+import org.mindrot.jbcrypt.BCrypt;
 
 /**
  * Author:
@@ -31,31 +32,35 @@ public class WalletNativeRepository {
 
     /**
      * transaction coin
-     * @param coin
+     * @param coinType
      * @param amount
      * @param userAccount
      * @param toAccount
      * @param message
      * @param orderId
-     * @return Single
+     * @param orderId
+     * @return pay_password
      * @Author:sunYang
      */
-    public Single transactionCoin(String orderId,String coin, String amount, String userAccount, String toAccount,String message){
-
+    public Single transactionCoin(String orderId,String coinType, String amount, String userAccount, String toAccount,String message,String pay_password){
         JsonArray selectAmount=new JsonArray().add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
-            conn.rxQueryWithParams("SELECT balance from v_balance_"+coin.toLowerCase().substring(0,3)+" where user_account= ?", selectAmount)
+            conn.rxQueryWithParams("select pay_password,balance from basic_account,v_balance_"+coinType+" where basic_account.user_account = v_balance_"+coinType+".user_account  and basic_account.user_account=?", selectAmount)
                 .flatMap(res -> {
-                    if (Double.parseDouble(res.getRows().get(0).getString("balance"))<Double.parseDouble(amount)){
+                    if ("".equals(res.getRows())){
                         return Single.just("false");
-                    }else{
+                    }else if (!BCrypt.checkpw(pay_password, res.getRows().get(0).getString("pay_password"))){
+                        return Single.just("false1");
+                    }else if (Double.parseDouble(res.getRows().get(0).getString("balance"))<Double.parseDouble(amount)){
+                        return Single.just("false2");
+                    } else {
                        JsonArray transactionCoin = new JsonArray().
                             add(orderId).
                             add(userAccount).
                             add(toAccount).
                             add(amount).
                             add(message);
-                        return conn.rxUpdateWithParams("INSERT INTO wallet_native_"+coin.toLowerCase().substring(0,3)+"(order_id,user_account,to_account,amount,order_time,message)  VALUES(?,?,?,?,floor(extract(epoch from now())),?)",transactionCoin).flatMap(result ->{
+                        return conn.rxUpdateWithParams("INSERT INTO wallet_native_"+coinType+"(order_id,user_account,to_account,amount,order_time,message)  VALUES(?,?,?,?,floor(extract(epoch from now())),?)",transactionCoin).flatMap(result ->{
                             if (result.getUpdated()>0){
                                 return Single.just("success");
                             }else{

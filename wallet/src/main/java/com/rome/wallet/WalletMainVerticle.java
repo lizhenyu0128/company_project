@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.Response;
 import java.io.File;
+import java.util.regex.Pattern;
 
 /**
  * Author:
@@ -161,23 +162,41 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
         ///////////////
         // transaction coin
-        router.post("/api/wallet/transactionCoin").handler(routingContext -> {
 
-            System.out.println(routingContext.get("token").toString());
-            String coin = routingContext.getBodyAsJson().getString("coin");
-            String amount = routingContext.getBodyAsJson().getString("amount");
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String toAccount = routingContext.getBodyAsJson().getString("toAccount");
-            String message = routingContext.getBodyAsJson().getString("message");
-            String orderId = "444";
-            walletNativeService.transactionCoin(orderId, coin, amount, userAccount, toAccount, message).subscribe(result -> {
-                if (result.equals("success")) {
-                    ResponseJSON.successJson(routingContext, "交易成功");
-                } else {
-                    ResponseJSON.successJson(routingContext, "余额不足");
-                }
-            }, error -> ResponseJSON.falseJson(routingContext, "交易失败"));
-        });
+       router.post("/api/wallet/transaction/:coinType").handler(routingContext ->{
+
+           String coinType=routingContext.request().getParam("coinType");
+           String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+           String toAccount = routingContext.getBodyAsJson().getString("toAccount");
+           String message = routingContext.getBodyAsJson().getString("message");
+           String amount = routingContext.getBodyAsJson().getString("amount");
+           String pay_password=routingContext.getBodyAsJson().getString("pay_password");
+
+           String regEx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
+           Pattern pattern = Pattern.compile(regEx);
+           System.out.println(pattern.matcher(amount).matches());
+
+           if (amount==null||"".equals(amount)||!pattern.matcher(amount).matches()||Double.parseDouble(amount)<0){
+               ResponseJSON.falseJson(routingContext,"请输入正数");
+           }else{
+               walletNativeService.transactionCoin(coinType,amount,userAccount,toAccount,message,pay_password).subscribe(result -> {
+                   if (("success").equals(result)){
+                       ResponseJSON.successJson(routingContext,"交易成功");
+                   }else if (("false1").equals(result)){
+                       ResponseJSON.successJson(routingContext,"支付密码错误");
+                   }
+                   else if (("false2").equals(result)){
+                       ResponseJSON.successJson(routingContext,"余额不足");
+                   }else{
+                       ResponseJSON.successJson(routingContext,"交易失败");
+                   }
+               },error -> ResponseJSON.falseJson(routingContext));
+           }
+
+
+
+       });
+
 
 
     }

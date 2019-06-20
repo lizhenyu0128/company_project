@@ -241,6 +241,85 @@ public class AccountRepository {
         });
     }
 
+    /**
+     * @param userAccount
+     * @param payPassword
+     * @param userPassword
+     * @return Single
+     * @description set payPassword
+     * @Author: sunYang
+     */
+    public Single setPayPassword(String userAccount,String payPassword,String userPassword){
+        JsonArray selPayPassword=new JsonArray().
+            add(userAccount);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
+            conn.rxQuerySingleWithParams("SELECT user_password ,pay_password FROM basic_account WHERE" +
+                " user_account = ? ",selPayPassword).flatMapSingle(res ->{
+                System.out.println(res.getString(1)+"74777");
+                if (("").equals(res.getString(1))||res.getString(1).equals("NULL")) {
+                    if (BCrypt.checkpw(userPassword, res.getString(0))) {
+                        JsonArray setPayPassword = new JsonArray().
+                            add(BCrypt.hashpw(payPassword, BCrypt.gensalt())).
+                            add(userAccount);
+                        return conn.rxUpdateWithParams("UPDATE basic_account SET pay_password=? where user_account=?", setPayPassword)
+                            .flatMap(result -> {
+                                if (result.getUpdated() > 0) {
+                                    return Single.just("success");
+                                } else {
+                                    return Single.error(new Exception("error"));
+                                }
+                            });
+                    } else {
+                        return Single.just("false");
+                    }
+                }else{
+                    return Single.just("false0");
+                }
+            })
+
+        );
+    }
+
+    /**
+     * @param userAccount
+     * @param payPassword
+     * @param newPayPassword
+     * @return Single
+     * @description update payPassword
+     * @Author: sunYang
+     */
+    public Single updatePayPassword(String userAccount,String payPassword,String newPayPassword){
+        System.out.println(userAccount+"/"+payPassword+"/"+newPayPassword);
+        JsonArray selectPayPassword=new JsonArray().
+            add(userAccount);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
+            conn.rxQuerySingleWithParams("SELECT pay_password FROM basic_account WHERE user_account= ?",selectPayPassword)
+                            .flatMapSingle(res ->{
+                                if (BCrypt.checkpw(payPassword,res.getString(0))){
+                                    System.out.println(BCrypt.hashpw(newPayPassword, BCrypt.gensalt()));
+                                    JsonArray updatePayPassword=new JsonArray().
+                                       add(BCrypt.hashpw(newPayPassword,BCrypt.gensalt())).
+                                       add(userAccount);
+                                    System.out.println(updatePayPassword);
+                                    return conn.rxUpdateWithParams("UPDATE basic_account SET pay_password=? where user_account=?",updatePayPassword)
+                                       .flatMap(result ->{
+                                       System.out.println(result.getUpdated());
+                                       if (result.getUpdated() > 0){
+                                           return Single.just("success");
+                                       }else{
+                                           return Single.error(new Exception("error"));
+                                       }
+                                   });
+                               }else{
+                                   return Single.just("false");
+                               }
+                })
+        );
+    }
+
+
+
+
 }
 
 

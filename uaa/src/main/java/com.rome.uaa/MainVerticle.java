@@ -26,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.handler.*;
 import io.vertx.reactivex.redis.RedisClient;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
@@ -200,13 +201,41 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // set payPassword
         router.put("/api/user/setPayPassword").handler(routingContext -> {
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String userPassword=routingContext.getBodyAsJson().getString("userPassword");
             String payPassword=routingContext.getBodyAsJson().getString("payPassword");
+
+            if ("".equals(payPassword)||"NULL".equals(payPassword)){
+                ResponseJSON.successJson(routingContext, "请输入支付密码");
+            }else{
+                uaaService.setPayPassword(userAccount,payPassword,userPassword).subscribe(result ->{
+                    if ("success".equals(result)){
+                        ResponseJSON.successJson(routingContext, "设置成功");
+                    }else if("false".equals(result)){
+                        ResponseJSON.falseJson(routingContext,"密码验证失败");
+                    }else {
+                        ResponseJSON.falseJson(routingContext,"已设置支付密码");
+                    }
+                }, error -> ResponseJSON.errJson(routingContext));
+            }
 
         });
 
-
-
         // update payPassword
+        router.put("/api/user/updatePayPassword").handler(routingContext ->{
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String payPassword=routingContext.getBodyAsJson().getString("payPassword");
+            String newPayPassword=routingContext.getBodyAsJson().getString("newPayPassword");
+
+            uaaService.updatePayPassword(userAccount,payPassword,newPayPassword).subscribe(result ->{
+                if ("success".equals(result)){
+                    ResponseJSON.successJson(routingContext,  "修改成功");
+                }else{
+                    ResponseJSON.falseJson(routingContext,"支付密码输入错误");
+                     }
+                }, error -> ResponseJSON.errJson(routingContext));
+        });
+
 
     }
 
