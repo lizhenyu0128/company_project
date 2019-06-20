@@ -150,14 +150,14 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                    if (("success").equals(result)){
                        ResponseJSON.successJson(routingContext,"交易成功");
                    }else if (("false1").equals(result)){
-                       ResponseJSON.successJson(routingContext,"支付密码错误");
+                       ResponseJSON.falseJson(routingContext,"支付密码错误");
                    }
                    else if (("false2").equals(result)){
-                       ResponseJSON.successJson(routingContext,"余额不足");
+                       ResponseJSON.falseJson(routingContext,"余额不足");
                    }else{
-                       ResponseJSON.successJson(routingContext,"交易失败");
+                       ResponseJSON.falseJson(routingContext,"交易失败");
                    }
-               },error -> ResponseJSON.falseJson(routingContext));
+               },error -> ResponseJSON.errJson(routingContext));
            }
 
 
