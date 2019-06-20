@@ -2,7 +2,6 @@ package com.rome.wallet;
 
 import com.alibaba.fastjson.JSON;
 import com.rome.common.config.InitConfig;
-import com.rome.common.config.RpcConfig;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.dbutil.PostgresqlPool;
 import com.rome.common.entity.Token;
@@ -10,15 +9,21 @@ import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
 import com.rome.wallet.repostiory.WalletNativeRepository;
+import com.rome.wallet.repostiory.WalletRepository;
 import com.rome.wallet.service.WalletNativeService;
 import com.rome.wallet.service.WalletNativeServiceImpl;
-import io.grpc.ManagedChannel;
+import com.rome.wallet.service.WalletService;
+import com.rome.wallet.service.WalletServiceImpl;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.client.HttpResponse;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
 import io.vertx.reactivex.redis.RedisClient;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
@@ -26,6 +31,8 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.xml.ws.Response;
 import java.io.File;
 
 /**
@@ -37,8 +44,8 @@ import java.io.File;
  */
 public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-    private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
-//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
+    //private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(WalletMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -46,6 +53,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
     private ServiceDiscovery discovery;
     private CommonService commonService;
     private WalletNativeService walletNativeService;
+    private WalletService walletService;
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -69,7 +77,8 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             //发现服务
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
-                walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient,vertx,mailClient, redisClient), vertx);
+                walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                walletService = new WalletServiceImpl(new WalletRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
                 routerController();
             });
@@ -89,9 +98,6 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
         this.config().getJsonObject("ConsulServer").put(wallet01.getString("ServiceName"), wallet01);
         Integer port = wallet01.getInteger("ServicePort");
-        //message channel
-        ManagedChannel messageChannel = RpcConfig.startRpcClient(vertx, message01.getString("ServiceAddress"), wallet01.getInteger("ServicePort"));
-
         // Create a router object.
         Router router = Router.router(vertx);
         vertx
@@ -119,33 +125,59 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         });
 
 
+        router.get("/api/wallet/http").handler(routingContext -> {
+//            WebClient webClient = WebClient.create(vertx);
+            // 以get方式请求远程地址
+//            webClient.postAbs("http://api.caodabi.com/v2/account")
+//                .send(handle -> {
+//                    // 处理响应的结果
+//                    if (handle.succeeded()) {
+//                        // 这里拿到的结果就是一个HTML文本，直接打印出来
+//                        System.out.println(handle.result().bodyAsString());
+//                    }else {
+//                        System.out.println("哈哈");
+//                    }
+//                });
 
 
-
-
-
-
+            ResponseJSON.successJson(routingContext, "来到以后方法");
+        });
+        // get coin wallet
+        router.get("/api/wallet/account/:account").handler(routingContext -> {
+//            WebClient webClient = WebClient.create(vertx);
+//            webClient.postAbs("http://api.caodabi.com/v2/account")
+//                .send(handle -> {
+//                    // 处理响应的结果
+//                    if (handle.succeeded()) {
+//                        // 这里拿到的结果就是一个HTML文本，直接打印出来
+//                        System.out.println(handle.result().bodyAsString());
+//                    } else {
+//                        System.out.println("哈哈");
+//                    }
+//                });
+            ResponseJSON.successJson(routingContext, "来到以后方法");
+        });
 
 
         ///////////////
         // transaction coin
-       router.post("/api/wallet/transactionCoin").handler(routingContext ->{
+        router.post("/api/wallet/transactionCoin").handler(routingContext -> {
 
-           System.out.println(routingContext.get("token").toString());
-           String coin=routingContext.getBodyAsJson().getString("coin");
-           String amount = routingContext.getBodyAsJson().getString("amount");
-           String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-           String toAccount = routingContext.getBodyAsJson().getString("toAccount");
-           String message = routingContext.getBodyAsJson().getString("message");
-           String orderId="444";
-           walletNativeService.transactionCoin( orderId,coin,amount,userAccount,toAccount,message).subscribe(result -> {
-                   if (result.equals("success")){
-                       ResponseJSON.successJson(routingContext,"交易成功");
-                   }else{
-                       ResponseJSON.successJson(routingContext,"余额不足");
-                   }
-           },error -> ResponseJSON.falseJson(routingContext,"交易失败"));
-       });
+            System.out.println(routingContext.get("token").toString());
+            String coin = routingContext.getBodyAsJson().getString("coin");
+            String amount = routingContext.getBodyAsJson().getString("amount");
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String toAccount = routingContext.getBodyAsJson().getString("toAccount");
+            String message = routingContext.getBodyAsJson().getString("message");
+            String orderId = "444";
+            walletNativeService.transactionCoin(orderId, coin, amount, userAccount, toAccount, message).subscribe(result -> {
+                if (result.equals("success")) {
+                    ResponseJSON.successJson(routingContext, "交易成功");
+                } else {
+                    ResponseJSON.successJson(routingContext, "余额不足");
+                }
+            }, error -> ResponseJSON.falseJson(routingContext, "交易失败"));
+        });
 
 
     }

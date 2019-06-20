@@ -207,13 +207,10 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-consul-client</artifactId>
         </dependency>
+        <!--webClient-->
         <dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-config-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-config</artifactId>
+            <artifactId>vertx-web-client</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -11,6 +11,5 @@ import io.reactivex.Single;
  */
 public interface WalletService {
 
-    
 
 }

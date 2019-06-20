@@ -12,11 +12,15 @@ import io.vertx.reactivex.redis.RedisClient;
  * Description:<>
  */
 public class WalletRepository {
+    private AsyncSQLClient postgreSQLClient;
+    private Vertx vertx;
     private MailClient mailClient;
     private RedisClient redisClient;
 
     public WalletRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient,
                              RedisClient redisClient) {
+        this.postgreSQLClient = postgreSQLClient;
+        this.vertx = vertx;
         this.mailClient = mailClient;
         this.redisClient = redisClient;
     }

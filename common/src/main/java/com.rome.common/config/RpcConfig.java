@@ -14,7 +14,7 @@ import io.vertx.reactivex.core.Vertx;
 public class RpcConfig {
 
     public static ManagedChannel startRpcClient(Vertx vertx,String host, int port) {
-        System.out.println("客户端启动"+port);
+        System.out.println("rpc去连接"+port);
         return VertxChannelBuilder
             .forAddress(vertx.getDelegate(), host, port)
             .usePlaintext(true)

@@ -17,7 +17,6 @@ public class ValidatorUtil {
   public static <T> void checkEntity(T object) {
 
     Set<ConstraintViolation<T>> constraintViolations = validator.validate(object);
-    System.out.println(constraintViolations);
     if (!constraintViolations.isEmpty()) {
       throw new RuntimeException(constraintViolations.iterator().next().getMessage());
     }

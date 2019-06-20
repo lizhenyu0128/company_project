@@ -92,11 +92,6 @@ public class UaaServiceImpl implements UaaService {
 
     }
 
-    @Override
-    public RoutingContext bbb(RoutingContext routingContext) {
-        return routingContext;
-    }
-
 
 
 }

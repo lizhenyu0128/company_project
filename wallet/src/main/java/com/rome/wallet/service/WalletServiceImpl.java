@@ -14,11 +14,13 @@ import org.slf4j.LoggerFactory;
  * @author Trump
  *
  */
-class WalletServiceImpl implements WalletService {
+public class WalletServiceImpl implements WalletService {
     final static Logger logger = LoggerFactory.getLogger(WalletServiceImpl.class);
     private WalletRepository walletRepository;
     private JWTAuth provide;
     private Vertx vertx;
 
 
+    public WalletServiceImpl(WalletRepository walletRepository, Vertx vertx) {
+    }
 }

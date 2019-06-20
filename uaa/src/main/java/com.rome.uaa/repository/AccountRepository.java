@@ -1,9 +1,7 @@
 package com.rome.uaa.repository;
 
 
-import com.rome.uaa.entity.BasicUserInfo;
 import com.rome.uaa.entity.UserSingIn;
-import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -11,13 +9,21 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.jwt.JWTOptions;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
+import io.vertx.reactivex.ext.web.client.HttpResponse;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.redis.RedisClient;
 import org.mindrot.jbcrypt.BCrypt;
-import org.mvel2.templates.TemplateRuntimeError;
+
+import javax.xml.crypto.Data;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Author:
@@ -31,6 +37,7 @@ public class AccountRepository {
     private Vertx vertx;
     private MailClient mailClient;
     private RedisClient redisClient;
+    private WebClient webClient;
 
     public AccountRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient,
                              RedisClient redisClient) {
@@ -38,6 +45,7 @@ public class AccountRepository {
         this.vertx = vertx;
         this.mailClient = mailClient;
         this.redisClient = redisClient;
+        webClient = WebClient.create(vertx);
     }
 
     /**
@@ -50,11 +58,30 @@ public class AccountRepository {
      */
     public Single userSignUp(JsonArray singUpParam) {
         System.out.println(singUpParam);
+        System.out.println(singUpParam.getString(0) + "id");
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
             conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,user_type,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude)VALUES(?,?,?,?,2,?,?," +
                 "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?)", singUpParam)
-                .map(singUpRes ->
-                    "success sign up"));
+                .<HttpResponse<Buffer>>flatMap(updateResult -> {
+                    System.out.println(updateResult.toJson() + "结果");
+                    if (updateResult.getUpdated() < 1) {
+                        return null;
+                    }
+                    Date ss = new Date();
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+                    String nowTime = format.format(ss);
+                    System.out.println(nowTime);
+                    return webClient.post(80, "api.caodabi.com", "/v2/account")
+                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp="+nowTime+",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
+                        .rxSendJsonObject(new JsonObject().put("userID", singUpParam.getString(0)));
+                }).flatMap(res -> {
+                System.out.println(res.bodyAsJsonObject()+"哈哈哈哈");
+                if(!res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()){
+                    return Single.just("success");
+                }
+                return Single.just("false");
+            })
+        );
     }
 
     /**
@@ -65,6 +92,7 @@ public class AccountRepository {
      * @description login_type phone mail basic
      */
     public Single userLogin(UserSingIn u) {
+
         if (!"basic".equals(u.getLoginType())) {
             return userLoginByCode(u);
         }
@@ -98,7 +126,7 @@ public class AccountRepository {
                                     .put("user_account", loginView.getValue("user_account"))
                                     //自 定义参数
                                     .put("identity_id", loginView.getValue("identity_id"));
-                                System.out.println(jwtParam+"库卡技术");
+                                System.out.println(jwtParam + "库卡技术");
                                 return sendToken(jwtParam);
 
                             }
@@ -174,7 +202,7 @@ public class AccountRepository {
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
-                            System.out.println(jwtObj+"哈哈哈");
+                            System.out.println(jwtObj + "哈哈哈");
                             return sendToken(jwtObj);
                         }));
         }));
@@ -190,7 +218,7 @@ public class AccountRepository {
     public Single resetPassword(String userAccount, String newPassword, String code, String content) {
         System.out.println(content + "resetPassword");
         System.out.println(content + userAccount);
-        String encryptPassWord =  BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        String encryptPassWord = BCrypt.hashpw(newPassword, BCrypt.gensalt());
         JsonArray resetPassword = new JsonArray().
             add(encryptPassWord).
             add(userAccount);

@@ -45,5 +45,5 @@ public interface UaaService {
      */
     Single resetPassword(String userAccount,String newPassword,String code,String content);
 
-    RoutingContext bbb(RoutingContext routingContext);
+
 }
