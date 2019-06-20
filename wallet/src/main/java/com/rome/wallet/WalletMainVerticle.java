@@ -145,13 +145,12 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                 if (res.bodyAsJsonObject().getJsonObject("addresses") == null) {
                     ResponseJSON.falseJson(routingContext);
                 } else {
-
                     ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), null);
                 }
-
             });
-
         });
+
+        //get transaction coin
 
 
         ///////////////
