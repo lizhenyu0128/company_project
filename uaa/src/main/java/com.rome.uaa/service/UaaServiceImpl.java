@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Trump
  */
 public class UaaServiceImpl implements UaaService {
-    final static Logger logger = LoggerFactory.getLogger(UaaServiceImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(UaaServiceImpl.class);
     private AccountRepository accountRepository;
     private JWTAuth provide;
     public UaaServiceImpl(AccountRepository repository, Vertx vertx) {
@@ -92,8 +92,7 @@ public class UaaServiceImpl implements UaaService {
 
     }
 
-<<<<<<< HEAD
-=======
+
     @Override
     public Single setPayPassword(String userAccount,String payPassword,String userPassword){
         return accountRepository.setPayPassword(userAccount,payPassword,userPassword).doOnError(err ->{
@@ -113,7 +112,6 @@ public class UaaServiceImpl implements UaaService {
         return routingContext;
     }
 
->>>>>>> 0a72a34ace449df6f747e73d12433c789d1e9b7f
 
 
 }

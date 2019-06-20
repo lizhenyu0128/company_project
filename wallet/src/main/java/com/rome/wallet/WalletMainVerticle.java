@@ -22,6 +22,7 @@ import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.client.HttpRequest;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
@@ -31,9 +32,13 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.Request;
 
 import javax.xml.ws.Response;
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +60,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
     private CommonService commonService;
     private WalletNativeService walletNativeService;
     private WalletService walletService;
+    private WebClient webClient;
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -73,9 +79,12 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             // 配置RedisClient
             redisClient = RedisClient.create(vertx, config().getJsonObject("RedisClient"));
 
-            //
-            discovery = ServiceDiscovery.create(vertx);
             //发现服务
+            discovery = ServiceDiscovery.create(vertx);
+
+            //创建httpclient
+            webClient = WebClient.create(vertx);
+
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
                 walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
@@ -120,83 +129,64 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                     routingContext.next();
                 }, err -> ResponseJSON.errJson(routingContext));
             });
-        // get all
-        router.get("/api/wallet/sss").handler(routingContext -> {
-            ResponseJSON.successJson(routingContext, "来到以后方法");
-        });
 
 
-        router.get("/api/wallet/http").handler(routingContext -> {
-//            WebClient webClient = WebClient.create(vertx);
-            // 以get方式请求远程地址
-//            webClient.postAbs("http://api.caodabi.com/v2/account")
-//                .send(handle -> {
-//                    // 处理响应的结果
-//                    if (handle.succeeded()) {
-//                        // 这里拿到的结果就是一个HTML文本，直接打印出来
-//                        System.out.println(handle.result().bodyAsString());
-//                    }else {
-//                        System.out.println("哈哈");
-//                    }
-//                });
-
-
-            ResponseJSON.successJson(routingContext, "来到以后方法");
-        });
         // get coin wallet
-        router.get("/api/wallet/account/:account").handler(routingContext -> {
-//            WebClient webClient = WebClient.create(vertx);
-//            webClient.postAbs("http://api.caodabi.com/v2/account")
-//                .send(handle -> {
-//                    // 处理响应的结果
-//                    if (handle.succeeded()) {
-//                        // 这里拿到的结果就是一个HTML文本，直接打印出来
-//                        System.out.println(handle.result().bodyAsString());
-//                    } else {
-//                        System.out.println("哈哈");
-//                    }
-//                });
-            ResponseJSON.successJson(routingContext, "来到以后方法");
+        router.get("/api/wallet/account").handler(routingContext -> {
+            String account = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            Date ss = new Date();
+            DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+            String nowTime = format.format(ss);
+            System.out.println(nowTime);
+            Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/account/" + account)
+                .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9").rxSend();
+            req.subscribe(res -> {
+                System.out.println(res.bodyAsJsonObject());
+                if (res.bodyAsJsonObject().getJsonObject("addresses") == null) {
+                    ResponseJSON.falseJson(routingContext);
+                } else {
+
+                    ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), null);
+                }
+
+            });
+
         });
 
 
         ///////////////
         // transaction coin
 
-       router.post("/api/wallet/transaction/:coinType").handler(routingContext ->{
+        router.post("/api/wallet/transaction/:coinType").handler(routingContext -> {
+            String coinType = routingContext.request().getParam("coinType");
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String toAccount = routingContext.getBodyAsJson().getString("toAccount");
+            String message = routingContext.getBodyAsJson().getString("message");
+            String amount = routingContext.getBodyAsJson().getString("amount");
+            String payPassword = routingContext.getBodyAsJson().getString("payPassword");
 
-           String coinType=routingContext.request().getParam("coinType");
-           String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-           String toAccount = routingContext.getBodyAsJson().getString("toAccount");
-           String message = routingContext.getBodyAsJson().getString("message");
-           String amount = routingContext.getBodyAsJson().getString("amount");
-           String payPassword=routingContext.getBodyAsJson().getString("payPassword");
+            String regEx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
+            Pattern pattern = Pattern.compile(regEx);
+            System.out.println(pattern.matcher(amount).matches());
 
-           String regEx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
-           Pattern pattern = Pattern.compile(regEx);
-           System.out.println(pattern.matcher(amount).matches());
-
-           if ("".equals(amount) || !pattern.matcher(amount).matches() || Double.parseDouble(amount) < 0){
-               ResponseJSON.falseJson(routingContext,"请输入正数");
-           }else{
-               walletNativeService.transactionCoin(coinType,amount,userAccount,toAccount,message,payPassword).subscribe(result -> {
-                   if (("success").equals(result)){
-                       ResponseJSON.successJson(routingContext,"交易成功");
-                   }else if (("false1").equals(result)){
-                       ResponseJSON.falseJson(routingContext,"支付密码错误");
-                   }
-                   else if (("false2").equals(result)){
-                       ResponseJSON.falseJson(routingContext,"余额不足");
-                   }else{
-                       ResponseJSON.falseJson(routingContext,"交易失败");
-                   }
-               },error -> ResponseJSON.errJson(routingContext));
-           }
+            if ("".equals(amount) || !pattern.matcher(amount).matches() || Double.parseDouble(amount) < 0) {
+                ResponseJSON.falseJson(routingContext, "请输入正数");
+            } else {
+                walletNativeService.transactionCoin(coinType, amount, userAccount, toAccount, message, payPassword).subscribe(result -> {
+                    if (("success").equals(result)) {
+                        ResponseJSON.successJson(routingContext, "交易成功");
+                    } else if (("false1").equals(result)) {
+                        ResponseJSON.falseJson(routingContext, "支付密码错误");
+                    } else if (("false2").equals(result)) {
+                        ResponseJSON.falseJson(routingContext, "余额不足");
+                    } else {
+                        ResponseJSON.falseJson(routingContext, "交易失败");
+                    }
+                }, error -> ResponseJSON.errJson(routingContext));
+            }
 
 
-
-       });
-
+        });
 
 
     }

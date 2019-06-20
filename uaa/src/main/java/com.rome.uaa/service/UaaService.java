@@ -45,9 +45,7 @@ public interface UaaService {
      */
     Single resetPassword(String userAccount,String newPassword,String code,String content);
 
-<<<<<<< HEAD
 
-=======
     /**
      * set payPassword
      * @param userAccount
@@ -69,5 +67,4 @@ public interface UaaService {
     Single updatePayPassword(String userAccount,String payPassword,String newPayPassword);
 
     RoutingContext bbb(RoutingContext routingContext);
->>>>>>> 0a72a34ace449df6f747e73d12433c789d1e9b7f
 }
