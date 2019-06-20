@@ -8,6 +8,7 @@ import com.rome.common.entity.Token;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
+import com.rome.wallet.entity.Cash;
 import com.rome.wallet.repostiory.WalletNativeRepository;
 import com.rome.wallet.repostiory.WalletRepository;
 import com.rome.wallet.service.WalletNativeService;
@@ -32,6 +33,7 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.jvm.hotspot.debugger.Page;
 import sun.misc.Request;
 
 import javax.xml.ws.Response;
@@ -88,7 +90,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
                 walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
-                walletService = new WalletServiceImpl(new WalletRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                walletService = new WalletServiceImpl(new WalletRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
                 routerController();
             });
@@ -150,10 +152,61 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             });
         });
 
-        //get transaction coin
-        router.get("/api/wallet/coin/:coinPair/transaction").handler(routingContext -> {
-            String account = JSON.parseObject(routingContext.get("coinPair"), Token.class).getUser_account();
+        //get transaction coin by hash
+        router.get("/api/wallet/coin/:coinPair/transaction/:hash").handler(routingContext -> {
+            System.out.println("asda");
+            String coin = routingContext.request().getParam("coinPair");
+            String hash = routingContext.request().getParam("hash");
+            Date ss = new Date();
+            DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+            String nowTime = format.format(ss);
+            System.out.println(nowTime);
+            Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/coin/" + coin + "/transaction/" + hash)
+                .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9").rxSend();
+            req.subscribe(res -> {
+                System.out.println(res.body().toJsonArray());
+                if (res.body().toJsonArray() == null) {
+                    ResponseJSON.falseJson(routingContext);
+                } else {
+                    ResponseJSON.successJson(routingContext, res.body().toJsonArray(), null);
+                }
+            });
+        });
 
+        //get get transaction coin by address
+        router.get("/api/wallet/coin/:coinPair/transaction/:address/:page/:size").handler(routingContext -> {
+            System.out.println("asda");
+            String coin = routingContext.request().getParam("coinPair");
+            String address = routingContext.request().getParam("address");
+            String page = routingContext.request().getParam("page");
+            String size = routingContext.request().getParam("size");
+            Date ss = new Date();
+            DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+            String nowTime = format.format(ss);
+            System.out.println(nowTime);
+            Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/coin/" + coin + "/transaction")
+                .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
+                .addQueryParam("address", address)
+                .addQueryParam("page", page)
+                .addQueryParam("size", size)
+                .rxSend();
+
+            req.subscribe(res -> {
+                System.out.println(res.bodyAsJsonObject());
+                if (res.bodyAsJsonObject().getJsonArray("items") == null) {
+                    ResponseJSON.falseJson(routingContext);
+                } else {
+                    ResponseJSON.successJson(routingContext, res.bodyAsJsonObject().getJsonArray("items"), null);
+                }
+            });
+        });
+
+        //create cash order
+        router.post("/api/wallet/cash").handler(routingContext -> {
+            //转成实体类
+            Cash cash = JSON.parseObject(routingContext.getBodyAsJson().toString(), Cash.class);
+            System.out.println(cash);
+            ResponseJSON.successJson(routingContext, null);
         });
 
 
