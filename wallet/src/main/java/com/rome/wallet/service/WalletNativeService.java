@@ -13,8 +13,7 @@ public interface WalletNativeService {
 
     /**
      * transaction coin
-     *  @param orderId
-     * @param coin
+     * @param coinType
      * @param amount
      * @param userAccount
      * @param toAccount
@@ -22,7 +21,8 @@ public interface WalletNativeService {
      * @return Single
      * @Author:sunYang
      */
-    Single transactionCoin(String orderId,String coin, String amount, String userAccount, String toAccount,String message);
+
+    Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String pay_password);
 
 
 }

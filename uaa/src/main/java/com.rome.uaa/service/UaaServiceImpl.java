@@ -93,6 +93,20 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
+    public Single setPayPassword(String userAccount,String payPassword,String userPassword){
+        return accountRepository.setPayPassword(userAccount,payPassword,userPassword).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+    @Override
+    public Single updatePayPassword(String userAccount,String payPassword,String newPayPassword){
+        return accountRepository.updatePayPassword(userAccount,payPassword,newPayPassword).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+    @Override
     public RoutingContext bbb(RoutingContext routingContext) {
         return routingContext;
     }

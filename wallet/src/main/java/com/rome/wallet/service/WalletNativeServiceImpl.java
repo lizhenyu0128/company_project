@@ -3,6 +3,7 @@ package com.rome.wallet.service;
 
 import com.rome.wallet.repostiory.WalletNativeRepository;
 import com.rome.wallet.repostiory.WalletRepository;
+import com.rome.wallet.util.OrderIdUtil;
 import io.reactivex.Single;
 import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
@@ -35,9 +36,9 @@ public class WalletNativeServiceImpl implements WalletNativeService {
 
 
   @Override
-  public Single transactionCoin(String orderId,String coin, String amount, String userAccount, String toAccount,String message){
-      System.out.println(8888);
-      return walletNativeRepository.transactionCoin(orderId, coin,  amount,  userAccount,  toAccount , message).doOnError(err ->{
+  public Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String pay_password){
+      String orderId=OrderIdUtil.getOrderNo(userAccount);
+      return walletNativeRepository.transactionCoin(orderId, coinType,  amount,  userAccount,  toAccount , message,pay_password).doOnError(err ->{
             logger.info(((Exception) err).getMessage());
         });
   }
