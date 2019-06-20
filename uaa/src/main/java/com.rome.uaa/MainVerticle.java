@@ -151,7 +151,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn).subscribe(result -> ResponseJSON.successJson(routingContext, result, "登陆成功")
+            uaaService.userLogin(userSingIn).subscribe(result -> ResponseJSON.successJson(routingContext,new JsonObject().put("token",result), "登陆成功")
                 , error -> ResponseJSON.falseJson(routingContext, "登陆失败"));
         });
 
