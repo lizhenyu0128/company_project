@@ -38,18 +38,18 @@ public class WalletNativeRepository {
      * @param toAccount
      * @param message
      * @param orderId
-     * @param orderId
-     * @return pay_password
+     * @param payPassword
+     * @return Single
      * @Author:sunYang
      */
-    public Single transactionCoin(String orderId,String coinType, String amount, String userAccount, String toAccount,String message,String pay_password){
+    public Single transactionCoin(String orderId,String coinType, String amount, String userAccount, String toAccount,String message,String payPassword){
         JsonArray selectAmount=new JsonArray().add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
             conn.rxQueryWithParams("select pay_password,balance from basic_account,v_balance_"+coinType+" where basic_account.user_account = v_balance_"+coinType+".user_account  and basic_account.user_account=?", selectAmount)
                 .flatMap(res -> {
                     if ("".equals(res.getRows())){
                         return Single.just("false");
-                    }else if (!BCrypt.checkpw(pay_password, res.getRows().get(0).getString("pay_password"))){
+                    }else if (!BCrypt.checkpw(payPassword, res.getRows().get(0).getString("pay_password"))){
                         return Single.just("false1");
                     }else if (Double.parseDouble(res.getRows().get(0).getString("balance"))<Double.parseDouble(amount)){
                         return Single.just("false2");
