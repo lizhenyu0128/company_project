@@ -137,16 +137,16 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
            String toAccount = routingContext.getBodyAsJson().getString("toAccount");
            String message = routingContext.getBodyAsJson().getString("message");
            String amount = routingContext.getBodyAsJson().getString("amount");
-           String pay_password=routingContext.getBodyAsJson().getString("pay_password");
+           String payPassword=routingContext.getBodyAsJson().getString("payPassword");
 
            String regEx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
            Pattern pattern = Pattern.compile(regEx);
            System.out.println(pattern.matcher(amount).matches());
 
-           if (amount==null||"".equals(amount)||!pattern.matcher(amount).matches()||Double.parseDouble(amount)<0){
+           if ("".equals(amount) || !pattern.matcher(amount).matches() || Double.parseDouble(amount) < 0){
                ResponseJSON.falseJson(routingContext,"请输入正数");
            }else{
-               walletNativeService.transactionCoin(coinType,amount,userAccount,toAccount,message,pay_password).subscribe(result -> {
+               walletNativeService.transactionCoin(coinType,amount,userAccount,toAccount,message,payPassword).subscribe(result -> {
                    if (("success").equals(result)){
                        ResponseJSON.successJson(routingContext,"交易成功");
                    }else if (("false1").equals(result)){

@@ -18,11 +18,12 @@ public interface WalletNativeService {
      * @param userAccount
      * @param toAccount
      * @param message
+     * @param payPassword
      * @return Single
      * @Author:sunYang
      */
 
-    Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String pay_password);
+    Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String payPassword);
 
 
 }

@@ -36,9 +36,9 @@ public class WalletNativeServiceImpl implements WalletNativeService {
 
 
   @Override
-  public Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String pay_password){
+  public Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String payPassword){
       String orderId=OrderIdUtil.getOrderNo(userAccount);
-      return walletNativeRepository.transactionCoin(orderId, coinType,  amount,  userAccount,  toAccount , message,pay_password).doOnError(err ->{
+      return walletNativeRepository.transactionCoin(orderId, coinType,  amount,  userAccount,  toAccount , message,payPassword).doOnError(err ->{
             logger.info(((Exception) err).getMessage());
         });
   }
