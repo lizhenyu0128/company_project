@@ -43,5 +43,11 @@ public class WalletNativeServiceImpl implements WalletNativeService {
         });
   }
 
+  @Override
+  public Single cancelOrder(String cashId,String coinType,String userAccount){
+      return walletNativeRepository.cancelOrder(cashId, coinType,  userAccount).doOnError(err ->{
+          logger.info(((Exception) err).getMessage());
+      });
+  }
 
 }

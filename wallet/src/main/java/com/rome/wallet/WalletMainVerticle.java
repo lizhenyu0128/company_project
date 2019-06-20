@@ -33,7 +33,6 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.jvm.hotspot.debugger.Page;
 import sun.misc.Request;
 
 import javax.xml.ws.Response;
@@ -52,8 +51,8 @@ import java.util.regex.Pattern;
  */
 public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-    //private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
-    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
+//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(WalletMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -211,6 +210,35 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
 
         ///////////////
+
+        //   cancel order
+        router.put("/api/wallet/cancelOrder/:coinType").handler(routingContext -> {
+            String cashId = routingContext.getBodyAsJson().getString("cashId");
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String coinType = routingContext.request().getParam("coinType");
+
+            walletNativeService.cancelOrder(cashId,coinType,userAccount).subscribe(result ->{
+                if ("success".equals(result)){
+                    Date date = new Date();
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+                    String nowTime = format.format(date);
+                    Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/cash/" + cashId + "cancel")
+                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9").rxSend();
+                    req.subscribe(res -> {
+                        System.out.println(res.body());
+                        if (res.statusCode()==200||"200".equals(res.statusCode())){
+                            ResponseJSON.successJson(routingContext,"调用成功");
+                        }else if (res.statusCode()==500||"500".equals(res.statusCode())){
+                            ResponseJSON.falseJson(routingContext,"调用失败");
+                        }
+                    });
+                }else {
+                    ResponseJSON.falseJson(routingContext,"审核时间已过，不可修改");
+                }
+            });
+        });
+
+
 
         // transaction coin
         router.post("/api/wallet/transaction/:coinType").handler(routingContext -> {

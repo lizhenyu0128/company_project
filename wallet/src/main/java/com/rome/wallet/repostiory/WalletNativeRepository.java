@@ -73,6 +73,30 @@ public class WalletNativeRepository {
     }
 
 
+    /**
+     *   cancel Order
+     * @param cashId
+     * @param coinType
+     * @param userAccount
+     * @return Single
+     * @Author: sunYang
+     */
+    public Single cancelOrder(String cashId,String coinType,String userAccount){
+        JsonArray cancelOrder=new JsonArray().
+            add(userAccount).
+            add(userAccount).
+            add(cashId);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
+            conn.rxUpdateWithParams("UPDATE wallet_"+coinType+" SET validate=3 where user_account=?  AND (SELECT validate FROM wallet_"+coinType+" WHERE user_account =? AND order_id =?)=0",cancelOrder).flatMap(res->{
+                if (res.getUpdated()>0){
+                    return Single.just("success");
+                }else{
+                    return Single.just("false");
+                }
+            }));
+    }
+
+
 
 
 }

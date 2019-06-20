@@ -22,8 +22,16 @@ public interface WalletNativeService {
      * @return Single
      * @Author:sunYang
      */
-
     Single transactionCoin(String coinType, String amount, String userAccount, String toAccount,String message,String payPassword);
 
+    /**
+     *  cancel Order
+     * @param cashId
+     * @param coinType
+     * @param userAccount
+     * @return Single
+     * @Author: sunYang
+     */
+    Single cancelOrder(String cashId,String coinType,String userAccount);
 
 }
