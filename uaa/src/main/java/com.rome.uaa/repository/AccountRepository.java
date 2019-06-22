@@ -60,8 +60,8 @@ public class AccountRepository {
         System.out.println(singUpParam);
         System.out.println(singUpParam.getString(0) + "id");
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,user_type,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,pay_password)VALUES(?,?,?,?,2,?,?," +
-                "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,null)", singUpParam)
+            conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,user_type,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude)VALUES(?,?,?,?,2,?,?," +
+                "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?)", singUpParam)
                 .<HttpResponse<Buffer>>flatMap(updateResult -> {
                     System.out.println(updateResult.toJson() + "结果");
                     if (updateResult.getUpdated() < 1) {
