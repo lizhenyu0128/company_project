@@ -203,11 +203,14 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         });
 
         //create cash order
-        router.post("/api/wallet/cash/:coinType").handler(routingContext -> {
-
+        router.post("/api/wallet/cash").handler(routingContext -> {
+            System.out.println(111);
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String coinType = routingContext.request().getParam("coinType");
+            System.out.println(userAccount);
+            String coinType = routingContext.getBodyAsJson().getString("coinType");
+            System.out.println(coinType);
             Cash cash = JSON.parseObject(routingContext.getBodyAsJson().toString(), Cash.class);
+            System.out.println(cash);
             String orderId= OrderIdUtil.getOrderNo(userAccount);
             cash.setOrderID(orderId);
             cash.setUserID(userAccount);
@@ -225,11 +228,13 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         ///////////////
 
         //   cancel order
-        router.put("/api/wallet/cancelOrder/:coinType").handler(routingContext -> {
+        router.put("/api/wallet/cancelOrder").handler(routingContext -> {
             String cashId = routingContext.getBodyAsJson().getString("cashId");
+            String coinType = routingContext.getBodyAsJson().getString("coinType");
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String coinType = routingContext.request().getParam("coinType");
-
+            System.out.println(coinType);
+            System.out.println(userAccount);
+            System.out.println(cashId);
             walletNativeService.cancelOrder(cashId,coinType,userAccount).subscribe(result ->{
                 if ("success".equals(result)){
                     Date date = new Date();

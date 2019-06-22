@@ -256,7 +256,8 @@ public class AccountRepository {
             conn.rxQuerySingleWithParams("SELECT user_password ,pay_password FROM basic_account WHERE" +
                 " user_account = ? ",selPayPassword).flatMapSingle(res ->{
                 System.out.println(res.getString(1)+"74777");
-                if (("").equals(res.getString(1))||res.getString(1).equals("NULL")) {
+                System.out.println("null".equals(res.getString(1)));
+                if (("").equals(res.getString(1))||"null".equals(res.getString(1))) {
                     if (BCrypt.checkpw(userPassword, res.getString(0))) {
                         JsonArray setPayPassword = new JsonArray().
                             add(BCrypt.hashpw(payPassword, BCrypt.gensalt())).
