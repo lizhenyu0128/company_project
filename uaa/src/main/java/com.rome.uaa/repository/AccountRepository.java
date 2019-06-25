@@ -1,9 +1,8 @@
 package com.rome.uaa.repository;
 
 
-import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.entity.UserSingIn;
-import com.rome.uaa.util.invitationCodeUtil;
+import com.rome.uaa.util.InvitationCodeUtil;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -11,21 +10,13 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.ext.jwt.JWTOptions;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
-import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.redis.RedisClient;
 import org.mindrot.jbcrypt.BCrypt;
-
-import javax.xml.crypto.Data;
-import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Author:
@@ -59,7 +50,7 @@ public class AccountRepository {
      * 3 用户id的生成规则
      */
     public Single userSignUp(JsonArray singUpParam,String invitationCode) {
-        String code= invitationCodeUtil.generateShortUuid();
+        String code= InvitationCodeUtil.generateShortUuid();
         JsonArray insrt = new JsonArray();
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
                 conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?",new JsonArray().add(invitationCode)).flatMap(result->{
