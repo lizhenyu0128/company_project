@@ -52,8 +52,8 @@ public class WalletNativeServiceImpl implements WalletNativeService {
   }
 
   @Override
-  public Single selectBasicAccount(String userAccount, Cash cash, String coinType) {
-      return walletNativeRepository.selectBasicAccount(userAccount,cash,coinType).doOnError(err -> {
+  public Single createCashOrder(String userAccount, Cash cash, String coinType) {
+      return walletNativeRepository.createCashOrder(userAccount,cash,coinType).doOnError(err -> {
           logger.info(((Exception) err).getMessage());
       });
 

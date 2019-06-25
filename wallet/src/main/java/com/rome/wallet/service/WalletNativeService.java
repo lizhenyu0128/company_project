@@ -36,13 +36,13 @@ public interface WalletNativeService {
     Single cancelOrder(String cashId,String coinType,String userAccount);
 
     /**
-     *  select BasicAccount
+     *  create cash order
      * @param userAccount
      * @param cash
      * @param coinType
      * @return Single
      * @Author: sunYang
      */
-    Single selectBasicAccount(String userAccount, Cash cash, String coinType);
+    Single createCashOrder(String userAccount, Cash cash, String coinType);
 
 }

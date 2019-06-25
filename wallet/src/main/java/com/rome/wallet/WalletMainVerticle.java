@@ -206,16 +206,11 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
         router.post("/api/wallet/cash").handler(routingContext -> {
             System.out.println(111);
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            System.out.println(userAccount);
             String coinType = routingContext.getBodyAsJson().getString("coinType");
-            System.out.println(coinType);
             Cash cash = JSON.parseObject(routingContext.getBodyAsJson().toString(), Cash.class);
-            System.out.println(cash);
-            String orderId= OrderIdUtil.getOrderNo(userAccount);
-            cash.setOrderID(orderId);
+            cash.setOrderID(OrderIdUtil.getOrderNo(userAccount));
             cash.setUserID(userAccount);
-            System.out.println(cash);
-            walletNativeService.selectBasicAccount(userAccount,cash,coinType).subscribe(result ->{
+            walletNativeService.createCashOrder(userAccount,cash,coinType).subscribe(result ->{
                 if ("success".equals(result)){
                     ResponseJSON.successJson(routingContext,"true");
                 }else{
@@ -223,9 +218,6 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                 }
             });
         });
-
-
-        ///////////////
 
         //   cancel order
         router.put("/api/wallet/cancelOrder").handler(routingContext -> {

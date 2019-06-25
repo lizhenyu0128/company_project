@@ -1,7 +1,9 @@
 package com.rome.uaa.repository;
 
 
+import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.entity.UserSingIn;
+import com.rome.uaa.util.invitationCodeUtil;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -39,49 +41,56 @@ public class AccountRepository {
     private RedisClient redisClient;
     private WebClient webClient;
 
-    public AccountRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient,
-                             RedisClient redisClient) {
+    public AccountRepository(AsyncSQLClient postgreSQLClient,Vertx vertx,MailClient mailClient,RedisClient redisClient,WebClient webClient){
         this.postgreSQLClient = postgreSQLClient;
         this.vertx = vertx;
         this.mailClient = mailClient;
         this.redisClient = redisClient;
-        webClient = WebClient.create(vertx);
+        this.webClient =webClient;
     }
 
     /**
      * @param singUpParam
+     * @param invitationCode
      * @return
      * @description user sign up
      * 1 判断是否插入，只能看error面
      * 2 flatMap咋样返回常数
      * 3 用户id的生成规则
      */
-    public Single userSignUp(JsonArray singUpParam) {
-        System.out.println(singUpParam);
-        System.out.println(singUpParam.getString(0) + "id");
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,user_type,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude)VALUES(?,?,?,?,2,?,?," +
-                "floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?)", singUpParam)
-                .<HttpResponse<Buffer>>flatMap(updateResult -> {
-                    System.out.println(updateResult.toJson() + "结果");
-                    if (updateResult.getUpdated() < 1) {
-                        return null;
+    public Single userSignUp(JsonArray singUpParam,String invitationCode) {
+        String code= invitationCodeUtil.generateShortUuid();
+        JsonArray insrt = new JsonArray();
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
+                conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?",new JsonArray().add(invitationCode)).flatMap(result->{
+                    System.out.println(result.getRows().isEmpty());
+                    if (result.getRows().isEmpty()) {
+                        if ("".equals(invitationCode)){
+                            insrt.add(singUpParam.getString(0)).
+                                add(0).
+                                add(0).
+                                add(code);
+                        }else{
+                            return Single.just("false");
+                        }
+                    } else {
+                        insrt.add(singUpParam.getString(0)).
+                            add(result.getRows().get(0).getInteger("level")).
+                            add(result.getRows().get(0).getString("uid")).
+                            add(code);
                     }
-                    Date ss = new Date();
-                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
-                    String nowTime = format.format(ss);
-                    System.out.println(nowTime);
-                    return webClient.post(80, "api.caodabi.com", "/v2/account")
-                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp="+nowTime+",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
-                        .rxSendJsonObject(new JsonObject().put("userID", singUpParam.getString(0)));
-                }).flatMap(res -> {
-                System.out.println(res.bodyAsJsonObject()+"哈哈哈哈");
-                if(!res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()){
-                    return Single.just("success");
-                }
-                return Single.just("false");
-            })
-        );
+                    return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,2)",singUpParam).flatMap(reu->{
+                        if (reu.getUpdated()>0){
+                            return  conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)",insrt).flatMap(rest->{
+                                if (rest.getUpdated()>0){
+                                   return Single.just("success");
+                                }
+                                return Single.just("false");
+                            });
+                        }
+                            return Single.just("false");
+                    });
+                }));
     }
 
     /**

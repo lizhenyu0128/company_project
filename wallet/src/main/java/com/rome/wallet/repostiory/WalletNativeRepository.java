@@ -122,8 +122,9 @@ public class WalletNativeRepository {
      * @return Single
      * @Author: sunYang
      */
-    public Single selectBasicAccount(String userAccount, Cash cash, String coinType){
-        JsonArray sba=new JsonArray().add(userAccount);
+    public Single createCashOrder(String userAccount, Cash cash, String coinType){
+        JsonArray sba=new JsonArray().
+            add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
             conn.rxQueryWithParams("SELECT user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type  from basic_account where user_account= ?",sba).flatMap(res ->{
                 if (!"".equals(res.getRows())){
