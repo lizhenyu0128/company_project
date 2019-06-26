@@ -24,7 +24,7 @@ public class Cash <T> {
     private String phone;
     @NonNull
     private String userID;
-
+    @NonNull
     private T userContext;
 
 }
