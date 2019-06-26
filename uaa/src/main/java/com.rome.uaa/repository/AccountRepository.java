@@ -69,7 +69,7 @@ public class AccountRepository {
                                        add(result.getRows().get(0).getString("uid")).
                                        add(code);
                     }
-                    return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,2)",singUpParam).flatMap(reu->{
+                    return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,1)",singUpParam).flatMap(reu->{
                         if (reu.getUpdated()>0){
                             return  conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)",memberRelation).flatMap(rest->{
                                 if (rest.getUpdated()>0){
@@ -85,23 +85,24 @@ public class AccountRepository {
 
     /**
      * login_type phone mail basic
-     *
      * @param u
+     * @param userType
      * @return
      * @description login_type phone mail basic
      */
-    public Single userLogin(UserSingIn u) {
+    public Single userLogin(UserSingIn u,String userType) {
 
         if (!"basic".equals(u.getLoginType())) {
-            return userLoginByCode(u);
+            return userLoginByCode(u,userType);
         }
         JsonArray loginParam = new JsonArray();
-        loginParam.add(u.getUserAccount());
+        loginParam.add(u.getUserAccount())
+                  .add(Integer.parseInt(userType));
         System.out.println(loginParam);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> conn.rxQueryWithParams(
             "SELECT a.user_account,a.use_status,a.user_mail,a.user_phone,a.user_password,b.identity_id FROM " +
                 "basic_account a LEFT JOIN \"identity\" b ON a.user_type=b.identity_id WHERE " +
-                "user_account=?", loginParam)
+                "user_account=? AND user_type= ?", loginParam)
             .flatMap(res -> {
                 if (res.getRows().isEmpty()) {
                     return Single.error(new Exception("用户不存在"));
@@ -117,7 +118,7 @@ public class AccountRepository {
                     loginParam.add(u.getLatitude());
                     loginParam.add(loginView.getValue("user_account"));
                     return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
-                        "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_account=?", loginParam)
+                        "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_account=? ", loginParam)
                         .flatMap(updateResult -> {
                             if (updateResult.getUpdated() > 0) {
                                 //更新jwt返回
@@ -163,10 +164,11 @@ public class AccountRepository {
 
     /**
      * @param u
+     * @param userType
      * @return
      * @description login_type phone mail basic
      */
-    private Single userLoginByCode(UserSingIn u) {
+    private Single userLoginByCode(UserSingIn u,String userType) {
         //查缓存
 
         String code = u.getVerificationCode();
@@ -184,12 +186,13 @@ public class AccountRepository {
             }
         }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
             System.out.println("萨达萨达");
-            JsonArray loginParam = new JsonArray();
-            loginParam.add(u.getUsingIp());
-            loginParam.add(u.getLongitude());
-            loginParam.add(u.getLatitude());
-            loginParam.add(phoneOrMail);
-            loginParam.add(phoneOrMail);
+            JsonArray loginParam = new JsonArray()
+            .add(u.getUsingIp())
+            .add(u.getLongitude())
+            .add(u.getLatitude())
+            .add(phoneOrMail)
+            .add(phoneOrMail)
+            .add(Integer.parseInt(userType));
             System.out.println(loginParam);
             return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
                 "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=? or user_mail=?", loginParam)
@@ -197,7 +200,7 @@ public class AccountRepository {
                 .flatMapSingle(updateResult ->
                     conn.rxQueryWithParams("SELECT user_account,b.identity_id FROM " +
                             "basic_account a LEFT JOIN \"identity\" b ON a.user_type = b.identity_id WHERE " +
-                            "a.user_phone = ? or a.user_mail = ?",
+                            "a.user_phone = ? or a.user_mail = ?  AND user_type= ? ",
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);

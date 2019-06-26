@@ -172,8 +172,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
+            String userType = routingContext.getBodyAsJson().getString("userType");
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn).subscribe(result -> ResponseJSON.successJson(routingContext,new JsonObject().put("token",result), "登陆成功")
+            uaaService.userLogin(userSingIn,userType).subscribe(result -> ResponseJSON.successJson(routingContext,new JsonObject().put("token",result), "登陆成功")
                 , error -> ResponseJSON.falseJson(routingContext, "登陆失败"));
         });
 
@@ -258,9 +259,12 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                      }
                 }, error -> ResponseJSON.errJson(routingContext));
         });
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 25b5cd60319fd0dda2a6c9c75b314170e8535f94
     }
 
     private Completable consulInit(JsonObject config) {

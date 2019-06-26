@@ -28,11 +28,11 @@ public interface UaaService {
 
     /**
      * user login
-     *
      * @param userSingIn
+     * @param userType
      * @return Single
      */
-    Single userLogin(UserSingIn userSingIn);
+    Single userLogin(UserSingIn userSingIn,String userType);
 
     /**
      * reset password

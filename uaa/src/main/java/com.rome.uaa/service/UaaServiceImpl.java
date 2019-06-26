@@ -72,7 +72,7 @@ public class UaaServiceImpl implements UaaService {
      * @return
      */
     @Override
-    public Single userLogin(UserSingIn u) {
+    public Single userLogin(UserSingIn u,String userType) {
         if (!"basic".equals(u.getLoginType())) {
             if ("loginPhone".equals(u.getLoginType())) {
                 u.setUserMail("null");
@@ -80,7 +80,7 @@ public class UaaServiceImpl implements UaaService {
                 u.setUserPhone("null");
             }
         }
-        return accountRepository.userLogin(u).doOnError(err ->
+        return accountRepository.userLogin(u,userType).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
 
