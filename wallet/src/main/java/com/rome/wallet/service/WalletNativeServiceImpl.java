@@ -1,6 +1,7 @@
 package com.rome.wallet.service;
 
 
+import com.rome.wallet.entity.Cash;
 import com.rome.wallet.repostiory.WalletNativeRepository;
 import com.rome.wallet.repostiory.WalletRepository;
 import com.rome.wallet.util.OrderIdUtil;
@@ -50,4 +51,11 @@ public class WalletNativeServiceImpl implements WalletNativeService {
       });
   }
 
+  @Override
+  public Single createCashOrder(String userAccount, Cash cash, String coinType) {
+      return walletNativeRepository.createCashOrder(userAccount,cash,coinType).doOnError(err -> {
+          logger.info(((Exception) err).getMessage());
+      });
+
+  }
 }

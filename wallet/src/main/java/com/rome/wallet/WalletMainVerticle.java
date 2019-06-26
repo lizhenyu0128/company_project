@@ -15,6 +15,7 @@ import com.rome.wallet.service.WalletNativeService;
 import com.rome.wallet.service.WalletNativeServiceImpl;
 import com.rome.wallet.service.WalletService;
 import com.rome.wallet.service.WalletServiceImpl;
+import com.rome.wallet.util.OrderIdUtil;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.Future;
@@ -88,7 +89,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
-                walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
                 walletService = new WalletServiceImpl(new WalletRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
                 routerController();
@@ -134,6 +135,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
         // get coin wallet
         router.get("/api/wallet/account").handler(routingContext -> {
+            System.out.println("asd");
             String account = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             Date ss = new Date();
             DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
@@ -202,27 +204,35 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
         //create cash order
         router.post("/api/wallet/cash").handler(routingContext -> {
-            //转成实体类
+            System.out.println(111);
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+            String coinType = routingContext.getBodyAsJson().getString("coinType");
             Cash cash = JSON.parseObject(routingContext.getBodyAsJson().toString(), Cash.class);
-            System.out.println(cash);
-            ResponseJSON.successJson(routingContext, null);
+            cash.setOrderID(OrderIdUtil.getOrderNo(userAccount));
+            cash.setUserID(userAccount);
+            walletNativeService.createCashOrder(userAccount,cash,coinType).subscribe(result ->{
+                if ("success".equals(result)){
+                    ResponseJSON.successJson(routingContext,"true");
+                }else{
+                    ResponseJSON.falseJson(routingContext,"false");
+                }
+            });
         });
 
-
-        ///////////////
-
         //   cancel order
-        router.put("/api/wallet/cancelOrder/:coinType").handler(routingContext -> {
+        router.put("/api/wallet/cancelOrder").handler(routingContext -> {
             String cashId = routingContext.getBodyAsJson().getString("cashId");
+            String coinType = routingContext.getBodyAsJson().getString("coinType");
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String coinType = routingContext.request().getParam("coinType");
-
+            System.out.println(coinType);
+            System.out.println(userAccount);
+            System.out.println(cashId);
             walletNativeService.cancelOrder(cashId,coinType,userAccount).subscribe(result ->{
                 if ("success".equals(result)){
                     Date date = new Date();
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
                     String nowTime = format.format(date);
-                    Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/cash/" + cashId + "cancel")
+                    Single<HttpResponse<Buffer>> req = webClient.put(80, "api.caodabi.com", "/v2/cash/" + cashId + "/cancel")
                         .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9").rxSend();
                     req.subscribe(res -> {
                         System.out.println(res.body());
@@ -248,15 +258,15 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             String message = routingContext.getBodyAsJson().getString("message");
             String amount = routingContext.getBodyAsJson().getString("amount");
             String payPassword = routingContext.getBodyAsJson().getString("payPassword");
-
+            System.out.println(userAccount);
             String regEx = "([1-9]\\d*\\.?\\d*)|(0\\.\\d*[1-9])";
             Pattern pattern = Pattern.compile(regEx);
-            System.out.println(pattern.matcher(amount).matches());
 
             if ("".equals(amount) || !pattern.matcher(amount).matches() || Double.parseDouble(amount) < 0) {
                 ResponseJSON.falseJson(routingContext, "请输入正数");
             } else {
                 walletNativeService.transactionCoin(coinType, amount, userAccount, toAccount, message, payPassword).subscribe(result -> {
+                    System.out.println(result);
                     if (("success").equals(result)) {
                         ResponseJSON.successJson(routingContext, "交易成功");
                     } else if (("false1").equals(result)) {

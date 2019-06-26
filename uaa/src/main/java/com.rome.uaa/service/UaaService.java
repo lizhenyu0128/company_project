@@ -20,11 +20,11 @@ public interface UaaService {
 
     /**
      * user sign up
-     *
-     * @param userSignUp
+     *@param userSignUp
+     * @param invitationCode
      * @return Single
      */
-    Single userSignUp(UserSignUp userSignUp);
+    Single userSignUp(UserSignUp userSignUp,String invitationCode);
 
     /**
      * user login

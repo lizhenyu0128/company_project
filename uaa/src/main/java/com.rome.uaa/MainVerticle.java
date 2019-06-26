@@ -21,12 +21,16 @@ import com.rome.uaa.service.UaaService;
 import com.rome.uaa.service.UaaServiceImpl;
 import io.grpc.ManagedChannel;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.client.HttpResponse;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.*;
 import io.vertx.reactivex.redis.RedisClient;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
@@ -36,6 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author Trump
@@ -52,7 +59,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private UaaService uaaService;
     private CommonService commonService;
     private ServiceDiscovery discovery;
-
+    private WebClient webClient;
     @Override
     public void start(Future<Void> startFuture) {
 
@@ -69,14 +76,16 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             // 配置RedisClient
             redisClient = RedisClient.create(vertx, config().getJsonObject("RedisClient"));
 
-            //
+            //发现服务
             discovery = ServiceDiscovery.create(vertx);
 
-            //发现服务
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
 
+                //创建httpclient
+                webClient = WebClient.create(vertx);
+
                 // 配置传递
-                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient), vertx);
+                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
 
                 routerController();
@@ -131,17 +140,30 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // user sign up
         router.put("/api/signUp").handler(routingContext -> {
-            System.out.println(111);
             //转成实体类
             UserSignUp userSignUp = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSignUp.class);
             //判断实体类
             ValidatorUtil.checkEntity(userSignUp);
-            uaaService.userSignUp(userSignUp).subscribe(result ->
-                ResponseJSON.successJson(routingContext), err -> {
-                if ("1".equals(((Exception) err).getMessage())) {
-                    ResponseJSON.falseJson(routingContext);
+            String invitationCode=routingContext.getBodyAsJson().getString("invitationCode");
+
+            uaaService.userSignUp(userSignUp,invitationCode).subscribe(result ->{
+                if ("success".equals(result)){
+                    Date date = new Date();
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
+                    String nowTime = format.format(date);
+                    Single<HttpResponse<Buffer>> req = webClient.post(80, "api.caodabi.com", "/v2/account")
+                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp="+nowTime+",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
+                        .rxSendJsonObject(new JsonObject().put("userID",userSignUp.getUserAccount()));
+                    req.subscribe(res -> {
+                        if (res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()) {
+                            ResponseJSON.falseJson(routingContext,"注册失败");
+                        } else {
+                            ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), "注册成功");
+                        }
+                    } , error -> ResponseJSON.errJson(routingContext));
+                }else {
+                    ResponseJSON.falseJson(routingContext,"注册失败");
                 }
-                ResponseJSON.falseJson(routingContext);
             });
         });
 
@@ -182,14 +204,13 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         //    reset password
         router.put("/api/user/resetPassword").handler(routingContext -> {
-            System.out.println(routingContext.get("token").toString());
+
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            System.out.println(userAccount);
             String newPassword = routingContext.getBodyAsJson().getString("newPassword");
             String code = routingContext.getBodyAsJson().getString("code");
             String phone = routingContext.getBodyAsJson().getString("phone");
+
             uaaService.resetPassword(userAccount, newPassword, code, phone).subscribe(result -> {
-                    System.out.println(result.toString() + "23423424");
                     if ((Boolean) result) {
                         ResponseJSON.successJson(routingContext, "修改成功");
                     } else {
@@ -201,11 +222,12 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // set payPassword
         router.put("/api/user/setPayPassword").handler(routingContext -> {
+
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String userPassword=routingContext.getBodyAsJson().getString("userPassword");
             String payPassword=routingContext.getBodyAsJson().getString("payPassword");
 
-            if ("".equals(payPassword)||"NULL".equals(payPassword)){
+            if ("".equals(payPassword)||null==payPassword){
                 ResponseJSON.successJson(routingContext, "请输入支付密码");
             }else{
                 uaaService.setPayPassword(userAccount,payPassword,userPassword).subscribe(result ->{
@@ -224,6 +246,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         // update payPassword
         router.put("/api/user/updatePayPassword").handler(routingContext ->{
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+
             String payPassword=routingContext.getBodyAsJson().getString("payPassword");
             String newPayPassword=routingContext.getBodyAsJson().getString("newPayPassword");
 
@@ -235,6 +258,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                      }
                 }, error -> ResponseJSON.errJson(routingContext));
         });
+
 
 
     }

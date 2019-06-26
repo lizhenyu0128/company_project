@@ -1,5 +1,6 @@
 package com.rome.wallet.service;
 
+import com.rome.wallet.entity.Cash;
 import io.reactivex.Single;
 
 /**
@@ -33,5 +34,15 @@ public interface WalletNativeService {
      * @Author: sunYang
      */
     Single cancelOrder(String cashId,String coinType,String userAccount);
+
+    /**
+     *  create cash order
+     * @param userAccount
+     * @param cash
+     * @param coinType
+     * @return Single
+     * @Author: sunYang
+     */
+    Single createCashOrder(String userAccount, Cash cash, String coinType);
 
 }

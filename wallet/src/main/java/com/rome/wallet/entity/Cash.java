@@ -12,19 +12,19 @@ import lombok.NonNull;
 @Data
 public class Cash <T> {
 
-    @NonNull
     private String orderID;
     @NonNull
     private String toAddr;
     @NonNull
     private String coinPair;
     @NonNull
-    private Double amount;
+    private String amount;
     @NonNull
     private String phone;
-    @NonNull
     private String userID;
     @NonNull
+    private String message;
+
     private T userContext;
 
 }
