@@ -227,7 +227,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String userPassword=routingContext.getBodyAsJson().getString("userPassword");
             String payPassword=routingContext.getBodyAsJson().getString("payPassword");
 
-            if ("".equals(payPassword)||"NULL".equals(payPassword)){
+            if ("".equals(payPassword)||null==payPassword){
                 ResponseJSON.successJson(routingContext, "请输入支付密码");
             }else{
                 uaaService.setPayPassword(userAccount,payPassword,userPassword).subscribe(result ->{
