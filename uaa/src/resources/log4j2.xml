@@ -1,32 +1,32 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--    &lt;!&ndash; OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL &ndash;&gt;-->
-<!--<Configuration status="WARN" monitorInterval="60">&lt;!&ndash; self log level &ndash;&gt;-->
+<!--<?xml version="1.0" encoding="UTF-8"?>
+    &lt;!&ndash; OFF > FATAL > ERROR > WARN > INFO > DEBUG > TRACE > ALL &ndash;&gt;
+<Configuration status="WARN" monitorInterval="60">&lt;!&ndash; self log level &ndash;&gt;
 
-<!--<Properties>-->
-<!--    <Property name="log_path">log/</Property>-->
-<!--</Properties>-->
+<Properties>
+    <Property name="log_path">log/</Property>
+</Properties>
 
-<!--<Appenders>-->
-<!--    <Console name="Console" target="SYSTEM_OUT">-->
-<!--        &lt;!&ndash;<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />&ndash;&gt;-->
-<!--        <PatternLayout pattern="[%d][%t][%p][%c:%L] %m%n"/>-->
-<!--    </Console>-->
-<!--    <RollingFile name="DailyRollingFile" fileName="${log_path}/zcrTest.log" filePattern="${log_path}/zcrTest%d{yyyy-MM-dd}-%i.log.gz">-->
-<!--        <Filters>-->
-<!--            <ThresholdFilter level="INFO"/>-->
-<!--            &lt;!&ndash;<ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>&ndash;&gt;-->
-<!--        </Filters>-->
-<!--        <PatternLayout pattern="[%d][%t][%p][%c:%L] %m%n"/>-->
-<!--        &lt;!&ndash;<TimeBasedTriggeringPolicy interval="1"/>&ndash;&gt;-->
-<!--        <SizeBasedTriggeringPolicy size="10MB"/>-->
-<!--    </RollingFile>-->
-<!--</Appenders>-->
+<Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+        &lt;!&ndash;<ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY" />&ndash;&gt;
+        <PatternLayout pattern="[%d][%t][%p][%c:%L] %m%n"/>
+    </Console>
+    <RollingFile name="DailyRollingFile" fileName="${log_path}/zcrTest.log" filePattern="${log_path}/zcrTest%d{yyyy-MM-dd}-%i.log.gz">
+        <Filters>
+            <ThresholdFilter level="INFO"/>
+            &lt;!&ndash;<ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>&ndash;&gt;
+        </Filters>
+        <PatternLayout pattern="[%d][%t][%p][%c:%L] %m%n"/>
+        &lt;!&ndash;<TimeBasedTriggeringPolicy interval="1"/>&ndash;&gt;
+        <SizeBasedTriggeringPolicy size="10MB"/>
+    </RollingFile>
+</Appenders>
 
-<!--<Loggers>-->
-<!--    <Root level="DEBUG">-->
-<!--        <AppenderRef ref="Console"/>-->
-<!--        <AppenderRef ref="DailyRollingFile"/>-->
-<!--    </Root>-->
-<!--</Loggers>-->
+<Loggers>
+    <Root level="DEBUG">
+        <AppenderRef ref="Console"/>
+        <AppenderRef ref="DailyRollingFile"/>
+    </Root>
+</Loggers>
 
-<!--</Configuration>-->
+</Configuration>-->
