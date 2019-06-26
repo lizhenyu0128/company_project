@@ -259,12 +259,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                      }
                 }, error -> ResponseJSON.errJson(routingContext));
         });
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 25b5cd60319fd0dda2a6c9c75b314170e8535f94
     }
 
     private Completable consulInit(JsonObject config) {

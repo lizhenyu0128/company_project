@@ -10,9 +10,11 @@
         <module name="common" />
         <module name="wallet" />
         <module name="message" />
+        <module name="admin" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="admin" target="1.8" />
       <module name="common" target="1.8" />
       <module name="company_project" target="1.8" />
       <module name="message" target="1.8" />
