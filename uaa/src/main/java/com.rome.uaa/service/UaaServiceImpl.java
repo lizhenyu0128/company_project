@@ -43,8 +43,8 @@ public class UaaServiceImpl implements UaaService {
     @Override
     public Single userSignUp(UserSignUp userSignUp,String invitationCode) {
         String encryptPassWord = BCrypt.hashpw(userSignUp.getUserPassword(), BCrypt.gensalt());
-        JsonArray singUpParam = new JsonArray();
-        singUpParam.add(userSignUp.getUserAccount())
+        JsonArray singUpParam = new JsonArray()
+            .add(userSignUp.getUserAccount())
             .add(encryptPassWord)
             .add(userSignUp.getUserMail())
             .add(userSignUp.getUserPhone())

@@ -148,15 +148,13 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
             uaaService.userSignUp(userSignUp,invitationCode).subscribe(result ->{
                 if ("success".equals(result)){
-                    Date ss = new Date();
+                    Date date = new Date();
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
-                    String nowTime = format.format(ss);
-                    System.out.println(nowTime);
+                    String nowTime = format.format(date);
                     Single<HttpResponse<Buffer>> req = webClient.post(80, "api.caodabi.com", "/v2/account")
                         .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp="+nowTime+",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
                         .rxSendJsonObject(new JsonObject().put("userID",userSignUp.getUserAccount()));
                     req.subscribe(res -> {
-                        System.out.println(res.bodyAsJsonObject()+"hahah");
                         if (res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()) {
                             ResponseJSON.falseJson(routingContext,"注册失败");
                         } else {

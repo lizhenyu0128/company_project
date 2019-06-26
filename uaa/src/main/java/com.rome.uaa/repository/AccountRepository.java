@@ -51,28 +51,27 @@ public class AccountRepository {
      */
     public Single userSignUp(JsonArray singUpParam,String invitationCode) {
         String code= InvitationCodeUtil.generateShortUuid();
-        JsonArray insrt = new JsonArray();
+        JsonArray memberRelation = new JsonArray();
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
                 conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?",new JsonArray().add(invitationCode)).flatMap(result->{
-                    System.out.println(result.getRows().isEmpty());
                     if (result.getRows().isEmpty()) {
                         if ("".equals(invitationCode)){
-                            insrt.add(singUpParam.getString(0)).
-                                add(0).
-                                add(0).
-                                add(code);
+                            memberRelation.add(singUpParam.getString(0)).
+                                            add(0).
+                                            add(0).
+                                            add(code);
                         }else{
                             return Single.just("false");
                         }
                     } else {
-                        insrt.add(singUpParam.getString(0)).
-                            add(result.getRows().get(0).getInteger("level")).
-                            add(result.getRows().get(0).getString("uid")).
-                            add(code);
+                        memberRelation.add(singUpParam.getString(0)).
+                                       add(result.getRows().get(0).getInteger("level")).
+                                       add(result.getRows().get(0).getString("uid")).
+                                       add(code);
                     }
                     return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,2)",singUpParam).flatMap(reu->{
                         if (reu.getUpdated()>0){
-                            return  conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)",insrt).flatMap(rest->{
+                            return  conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)",memberRelation).flatMap(rest->{
                                 if (rest.getUpdated()>0){
                                    return Single.just("success");
                                 }
