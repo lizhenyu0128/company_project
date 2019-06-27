@@ -28,7 +28,6 @@ import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.web.Router;
-import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.*;
@@ -38,10 +37,10 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -259,7 +258,20 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                      }
                 }, error -> ResponseJSON.errJson(routingContext));
         });
+
+        //获取一个助记词
+        router.get("/api/user/getMnemonics").handler(routingContext -> {
+            Dictionary dictionary = EnglishDictionary.instance();
+            Bip39 bip39 = new Bip39(dictionary);
+            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
+            System.out.println(Arrays.toString(entropy));
+            String mnemonics = bip39.createMnemonic(entropy);
+        });
+
+
     }
+
+
 
     private Completable consulInit(JsonObject config) {
         //consol发现服务
