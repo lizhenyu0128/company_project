@@ -12,6 +12,7 @@ import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
+import com.rome.common.util.BouncyCastleCrypto;
 import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
@@ -19,6 +20,9 @@ import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
 import com.rome.uaa.service.UaaService;
 import com.rome.uaa.service.UaaServiceImpl;
+import io.github.novacrypto.bip32.ExtendedPrivateKey;
+import io.github.novacrypto.bip32.networks.Bitcoin;
+import io.github.novacrypto.bip39.SeedCalculator;
 import io.grpc.ManagedChannel;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -35,9 +39,15 @@ import io.vertx.reactivex.redis.RedisClient;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
 import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
+import org.apache.commons.codec.binary.Hex;
+import org.nightcode.bip39.Bip39;
+import org.nightcode.bip39.EntropyDesc;
+import org.nightcode.bip39.dictionary.Dictionary;
+import org.nightcode.bip39.dictionary.EnglishDictionary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -48,8 +58,8 @@ import java.util.Date;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
-//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+//    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
 
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
@@ -255,21 +265,35 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     ResponseJSON.successJson(routingContext,  "修改成功");
                 }else{
                     ResponseJSON.falseJson(routingContext,"支付密码输入错误");
-                     }
-                }, error -> ResponseJSON.errJson(routingContext));
+                }
+            }, error -> ResponseJSON.errJson(routingContext));
         });
 
 //        //获取一个助记词
-//        router.get("/api/user/getMnemonics").handler(routingContext -> {
-//            Dictionary dictionary = EnglishDictionary.instance();
-//            Bip39 bip39 = new Bip39(dictionary);
-//            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
-//            System.out.println(Arrays.toString(entropy));
-//            String mnemonics = bip39.createMnemonic(entropy);
-//        });
+        router.get("/api/user/getMnemonics").handler(routingContext -> {
+            Dictionary dictionary = EnglishDictionary.instance();
+            Bip39 bip39 = new Bip39(dictionary);
+            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
+            System.out.println(Arrays.toString(entropy));
+            String mnemonics = bip39.createMnemonic(entropy);
+            //2. 由助记词得到种子
+            byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");
+            System.out.println(seed);
+            ExtendedPrivateKey rootPrivateKey = ExtendedPrivateKey.fromSeed(seed, Bitcoin.MAIN_NET);
+            byte[] pvc = rootPrivateKey.getKey();
+
+            String src = "1111";
+            String src2 = "1211";
+            BouncyCastleCrypto bcc = new BouncyCastleCrypto();
+            byte[] res = bcc.sign(src.getBytes(StandardCharsets.UTF_8), pvc);
+            System.out.println("签名：" + Hex.encodeHexString(res));
+            System.out.println("验证：" + bcc.verify(src2.getBytes(StandardCharsets.UTF_8), res, bcc.getPublicFor(pvc)));
 
 
-    }
+    });
+
+
+}
 
 
 
