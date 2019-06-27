@@ -45,20 +45,4 @@ public interface WalletNativeService {
      */
     Single createCashOrder(String userAccount, Cash cash, String coinType);
 
-    /**
-     *  inquire balance
-     * @param userAccount
-     * @return Single
-     * @Author: sunYang
-     */
-    Single inquireBalance(String userAccount);
-
-    /**
-     *  inquire balance by userAccount
-     * @param userAccount
-     * @param inquireAccount
-     * @return Single
-     * @Author: sunYang
-     */
-    Single inquireByUserAccount(String userAccount,String inquireAccount);
 }

@@ -53,9 +53,8 @@ import java.util.regex.Pattern;
  * @author Trump
  */
 public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
-
-//    private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
-    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(WalletMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -280,34 +279,6 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                     }
                 }, error -> ResponseJSON.errJson(routingContext));
             }
-        });
-
-        //inquire balance
-        router.get("/api/wallet/inquireBalance").handler(routingContext -> {
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-
-            walletNativeService.inquireBalance(userAccount).subscribe(result ->{
-                if("false".equals(result)){
-                    ResponseJSON.falseJson(routingContext, "false");
-                }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()), "success");
-                }
-
-            });
-        });
-
-        // inquire balance by userAccount
-        router.get("/api/wallet/inquireByUserAccount").handler(routingContext -> {
-            String inquireAccount =routingContext.request().getParam("inquireAccount");
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            walletNativeService.inquireByUserAccount(userAccount,inquireAccount).subscribe(result ->{
-                if("false".equals(result)){
-                    ResponseJSON.falseJson(routingContext, "false");
-                }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()), "success");
-                }
-
-            });
         });
 
 

@@ -48,8 +48,8 @@ import java.util.Date;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-  //  private final static String CONFIG_PATH = "F:\\company\\company_project\\uaa\\src\\resources" + File.separator + "config-dev.json";
-    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
 
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;

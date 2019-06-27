@@ -58,18 +58,5 @@ public class WalletNativeServiceImpl implements WalletNativeService {
       });
   }
 
-  @Override
-  public  Single inquireBalance(String userAccount){
-      return walletNativeRepository.inquireBalance(userAccount).doOnError(err -> {
-          logger.info(((Exception) err).getMessage());
-      });
-  }
-
-  @Override
-  public  Single inquireByUserAccount(String userAccount,String inquireAccount){
-      return walletNativeRepository.inquireByUserAccount(userAccount,inquireAccount).doOnError(err -> {
-          logger.info(((Exception) err).getMessage());
-      });
-  }
 
 }
