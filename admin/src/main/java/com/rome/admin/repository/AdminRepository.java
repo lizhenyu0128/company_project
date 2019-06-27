@@ -1,4 +1,4 @@
-package com.rome.wallet.repostiory;
+package com.rome.admin.repository;
 
 import com.rome.admin.util.OrderIdUtil;
 import io.reactivex.Single;
@@ -9,7 +9,6 @@ import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.redis.RedisClient;
-import org.apache.logging.log4j.core.config.Order;
 
 /**
  * @author asus
@@ -22,7 +21,7 @@ public class AdminRepository {
     private WebClient webClient;
 
 
-    public AdminRepository(AsyncSQLClient postgreSQLClient,Vertx vertx,MailClient mailClient,RedisClient redisClient,WebClient webClient){
+    public AdminRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient, RedisClient redisClient, WebClient webClient){
         this.postgreSQLClient = postgreSQLClient;
         this.vertx = vertx;
         this.mailClient = mailClient;

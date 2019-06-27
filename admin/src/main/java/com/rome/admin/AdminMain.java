@@ -8,7 +8,7 @@ import io.vertx.reactivex.core.Vertx;
  */
 public class AdminMain {
     public static void main(String[] args) {
-        Vertx vertx = io.vertx.reactivex.core.Vertx.vertx();
+        Vertx vertx = Vertx.vertx();
         RxHelper.deployVerticle(vertx, new AdminMainVerticle()).subscribe();
     }
 

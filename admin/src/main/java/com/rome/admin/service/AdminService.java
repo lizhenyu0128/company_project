@@ -23,7 +23,7 @@ public interface AdminService {
      * @return Single
      * @Author: sunYang
      */
-    Single inquireByUserAccount(String userAccount,String inquireAccount);
+    Single inquireByUserAccount(String userAccount, String inquireAccount);
 
     /**
      * Add transaction record  to (wallet_native_btc,wallet_native_eos，wallet_native_eth，wallet_native_usdt)
@@ -36,6 +36,6 @@ public interface AdminService {
      * @return Single
      * @Author: sunYang
      */
-    Single addTransactionRecord(String userAccount, String toAccount, String fromAccount,String amount,String coinType,String message);
+    Single addTransactionRecord(String userAccount, String toAccount, String fromAccount, String amount, String coinType, String message);
 
 }

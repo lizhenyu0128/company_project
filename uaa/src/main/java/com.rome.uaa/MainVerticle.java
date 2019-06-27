@@ -259,14 +259,14 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 }, error -> ResponseJSON.errJson(routingContext));
         });
 
-        //获取一个助记词
-        router.get("/api/user/getMnemonics").handler(routingContext -> {
-            Dictionary dictionary = EnglishDictionary.instance();
-            Bip39 bip39 = new Bip39(dictionary);
-            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
-            System.out.println(Arrays.toString(entropy));
-            String mnemonics = bip39.createMnemonic(entropy);
-        });
+//        //获取一个助记词
+//        router.get("/api/user/getMnemonics").handler(routingContext -> {
+//            Dictionary dictionary = EnglishDictionary.instance();
+//            Bip39 bip39 = new Bip39(dictionary);
+//            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
+//            System.out.println(Arrays.toString(entropy));
+//            String mnemonics = bip39.createMnemonic(entropy);
+//        });
 
 
     }

@@ -1,6 +1,6 @@
 package com.rome.admin.service;
 
-import com.rome.wallet.repostiory.AdminRepository;
+import com.rome.admin.repository.AdminRepository;
 import io.reactivex.Single;
 import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author asus
  */
-public class AdminServiceImpl implements AdminService{
+public class AdminServiceImpl implements AdminService {
 
     final static Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
     private AdminRepository adminRepository;

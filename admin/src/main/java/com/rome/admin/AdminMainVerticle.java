@@ -1,6 +1,7 @@
 package com.rome.admin;
 
 import com.alibaba.fastjson.JSON;
+import com.rome.admin.repository.AdminRepository;
 import com.rome.admin.service.AdminService;
 import com.rome.admin.service.AdminServiceImpl;
 import com.rome.common.config.InitConfig;
@@ -10,7 +11,6 @@ import com.rome.common.entity.Token;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.util.ResponseJSON;
-import com.rome.wallet.repostiory.AdminRepository;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -40,8 +40,8 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
     private RedisClient redisClient;
     private ServiceDiscovery discovery;
     private CommonService commonService;
-    private AdminService adminService;
     private WebClient webClient;
+    private AdminService adminService;
 
     @Override
     public void start(Future<Void> startFuture) {
