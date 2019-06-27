@@ -33,7 +33,7 @@ import java.io.File;
  */
 public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle{
 
-    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\admin\\src\\resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(AdminMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;

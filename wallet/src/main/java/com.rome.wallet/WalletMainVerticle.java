@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
  * @author Trump
  */
 public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
-    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\wallet\\src\\main\\resources" + File.separator + "config-dev.json";
 //    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(WalletMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
