@@ -108,6 +108,24 @@ public class UaaServiceImpl implements UaaService {
     public Single getMnemonics(String userAccount) {
         return accountRepository.getMnemonics(userAccount).doOnError(
             err -> logger.info(((Exception) err).getMessage()));
+
+    public  Single updateNickName(String userAccount,String nickName){
+        return accountRepository.updateNickName(userAccount,nickName).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+    @Override
+    public Single setHeadImage(String userAccount,String headImage){
+        return accountRepository.setHeadImage(userAccount,headImage).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+
+    @Override
+    public RoutingContext bbb(RoutingContext routingContext) {
+        return routingContext;
     }
 
 

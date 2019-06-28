@@ -1,5 +1,6 @@
 package com.rome.common.service;
 
+import com.rome.common.config.ProfitConfig;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.PubSecKeyOptions;
@@ -20,9 +21,11 @@ public class CommonServiceImpl implements CommonService {
 
     final static Logger logger = LoggerFactory.getLogger(CommonServiceImpl.class);
     private JWTAuth provide;
+    private ProfitConfig profitConfig;
 
-    public CommonServiceImpl(Vertx vertx) {
+    public CommonServiceImpl(ProfitConfig profitConfig,Vertx vertx) {
 
+        this.profitConfig = profitConfig;
         //setAlgorithm算法 //setPublicKey密钥 //setSymmetric是否对成加密
         provide = JWTAuth.create(vertx, new JWTAuthOptions()
             .addPubSecKey(new PubSecKeyOptions()
@@ -42,4 +45,12 @@ public class CommonServiceImpl implements CommonService {
                 }
             })).doOnError(err -> logger.info(err.getMessage()));
     }
+
+    @Override
+    public Single selectProfit(Vertx vertx, io.vertx.reactivex.core.AbstractVerticle verticle, String path){
+        return profitConfig.selectProfit(vertx,verticle,path).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
 }

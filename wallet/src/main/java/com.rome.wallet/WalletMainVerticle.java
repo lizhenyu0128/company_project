@@ -86,7 +86,6 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                 // 配置传递
                 walletNativeService = new WalletNativeServiceImpl(new WalletNativeRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
                 walletService = new WalletServiceImpl(new WalletRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
-                commonService = new CommonServiceImpl(vertx);
                 routerController();
             });
 

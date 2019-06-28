@@ -66,11 +66,7 @@ public interface UaaService {
      */
     Single updatePayPassword(String userAccount,String payPassword,String newPayPassword);
 
-    /**
-     * set payPassword
-     * @param userAccount
-     * @return Single
-     * @Author: Trump
-     */
+    RoutingContext bbb(RoutingContext routingContext);
+
     Single getMnemonics(String userAccount);
 }
