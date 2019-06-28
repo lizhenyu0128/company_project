@@ -13,7 +13,6 @@ import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
 import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
-import com.rome.common.util.BouncyCastleCrypto;
 import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
@@ -40,23 +39,13 @@ import io.vertx.reactivex.redis.RedisClient;
 import io.vertx.reactivex.servicediscovery.ServiceDiscovery;
 import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
-import org.apache.commons.codec.binary.Hex;
-import org.nightcode.bip39.Bip39;
-import org.nightcode.bip39.EntropyDesc;
-import org.nightcode.bip39.dictionary.Dictionary;
-import org.nightcode.bip39.dictionary.EnglishDictionary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.ws.Response;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
-
-;
 
 /**
  * @author Trump
@@ -65,7 +54,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
     //    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
     private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
-
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -74,8 +62,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private CommonService commonService;
     private ServiceDiscovery discovery;
     private WebClient webClient;
-
-    private ProfitConfig profitConfig;
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -95,30 +81,20 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
             //发现服务
             discovery = ServiceDiscovery.create(vertx);
-
-
-
-                consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
-                    //创建httpclient
+            consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
+                //创建httpclient
                 webClient = WebClient.create(vertx);
-
                 // 配置传递
-
-                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
-                commonService = new CommonServiceImpl(new ProfitConfig(postgreSQLClient,vertx),vertx);
-                commonService.selectProfit(vertx,this,CONFIG_PATH).subscribe();
-
+                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
+                commonService = new CommonServiceImpl(new ProfitConfig(postgreSQLClient, vertx), vertx);
+                commonService.selectProfit(vertx, this, CONFIG_PATH).subscribe();
                 routerController();
             });
-
-            //运行
-
         }, err -> logger.error(((Exception) err).getMessage()));
 
     }
 
     private void routerController() {
-
         //获取某个服务
         JsonObject uaa01 = discovery.rxGetRecord(new JsonObject().put("name", "uaa01")).blockingGet().getMetadata();
         JsonObject message01 = discovery.rxGetRecord(new JsonObject().put("name", "message01")).blockingGet().getMetadata();
@@ -156,7 +132,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             ResponseJSON.successJson(routingContext, "来到以后方法");
         });
 
-
         // user sign up
         router.put("/api/signUp").handler(routingContext -> {
             //转成实体类
@@ -180,11 +155,11 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                             ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), "注册成功");
                         }
 
-                    } , error -> ResponseJSON.errJson(routingContext));
-                }else if ("false".equals(result)){
-                    ResponseJSON.falseJson(routingContext,"注册失败");
+                    }, error -> ResponseJSON.errJson(routingContext));
+                } else if ("false".equals(result)) {
+                    ResponseJSON.falseJson(routingContext, "注册失败");
                 } else {
-                    ResponseJSON.falseJson(routingContext,"账户已经注册了");
+                    ResponseJSON.falseJson(routingContext, "账户已经注册了");
                 }
             });
         });
@@ -225,12 +200,10 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         //    reset password
         router.put("/api/user/resetPassword").handler(routingContext -> {
-
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String newPassword = routingContext.getBodyAsJson().getString("newPassword");
             String code = routingContext.getBodyAsJson().getString("code");
             String phone = routingContext.getBodyAsJson().getString("phone");
-
             uaaService.resetPassword(userAccount, newPassword, code, phone).subscribe(result -> {
                     if ((Boolean) result) {
                         ResponseJSON.successJson(routingContext, "修改成功");
@@ -283,12 +256,12 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         //update nickName
         router.put("/api/user/updateNickName").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String nickName=routingContext.getBodyAsJson().getString("nickName");
-            uaaService.updateNickName(userAccount,nickName).subscribe(result ->{
-                if ("success".equals(result)){
-                    ResponseJSON.successJson(routingContext,  "修改成功");
-                }else{
-                    ResponseJSON.falseJson(routingContext,"修改失败");
+            String nickName = routingContext.getBodyAsJson().getString("nickName");
+            uaaService.updateNickName(userAccount, nickName).subscribe(result -> {
+                if ("success".equals(result)) {
+                    ResponseJSON.successJson(routingContext, "修改成功");
+                } else {
+                    ResponseJSON.falseJson(routingContext, "修改失败");
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
@@ -296,22 +269,20 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         //set head image
         router.put("/api/user/setHeadImage").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-//            String headImage=routingContext.getBodyAsJson().getString("headImage");
-            String headImage="C:\\Users\\asus\\Pictures\\Saved Pictures\\666.jpg";
-            uaaService.setHeadImage(userAccount,headImage).subscribe(result ->{
-                if ("success".equals(result)){
-                    ResponseJSON.successJson(routingContext,  "头像上传成功");
-                }else{
-                    ResponseJSON.falseJson(routingContext,"头像上传失败");
+            String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\666.jpg";
+            uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
+                if ("success".equals(result)) {
+                    ResponseJSON.successJson(routingContext, "头像上传成功");
+                } else {
+                    ResponseJSON.falseJson(routingContext, "头像上传失败");
                 }
             }, error -> ResponseJSON.errJson(routingContext));
 
         });
 
-
-//        //获取一个助记词
+        //获取一个助记词
         router.get("/api/user/getMnemonics").handler(routingContext -> {
-            String userAccount = JSON.parseObject(routingContext.get("toke2n"), Token.class).getUser_account();
+            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             uaaService.getMnemonics(userAccount).subscribe(res -> {
                 ResponseJSON.successJson(routingContext, res, "success");
             }, err -> ResponseJSON.falseJson(routingContext, "false"));
@@ -332,7 +303,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             ResponseJSON.successJson(routingContext, privateKey, "success");
         });
 
-
         //2. 由助记词得到种子
 //            byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");
 //            System.out.println(seed);
@@ -345,10 +315,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 //            byte[] res = bcc.sign(src.getBytes(StandardCharsets.UTF_8), pvc);
 //            System.out.println("签名：" + Hex.encodeHexString(res));
 //            System.out.println("验证：" + bcc.verify(src2.getBytes(StandardCharsets.UTF_8), res, bcc.getPublicFor(pvc)));
-
-
     }
-
 
     private Completable consulInit(JsonObject config) {
         //consol发现服务

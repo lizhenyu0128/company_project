@@ -113,7 +113,6 @@ public class AccountRepository {
      * @description login_type phone mail basic
      */
     public Single userLogin(UserSingIn u, String userType) {
-
         if (!"basic".equals(u.getLoginType())) {
             return userLoginByCode(u, userType);
         }
@@ -192,7 +191,6 @@ public class AccountRepository {
      */
     private Single userLoginByCode(UserSingIn u, String userType) {
         //查缓存
-
         String code = u.getVerificationCode();
         String loginType = u.getLoginType();
         String phoneOrMail = "mail".equals(loginType) ? u.getUserMail() : u.getUserPhone();
@@ -299,7 +297,6 @@ public class AccountRepository {
                     return Single.just("false0");
                 }
             })
-
         );
     }
 
@@ -372,30 +369,25 @@ public class AccountRepository {
      * @Author: sunYang
      */
     public Single setHeadImage(String userAccount, String headImage) {
-
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
-            conn.rxQueryWithParams("SELECT head_image FROM basic_account WHERE user_account= ?",new JsonArray().add(userAccount)).flatMap(res->{
-                String headUrl=res.getRows().get(0).getString("head_image");
-                String path="E:\\company\\image\\headImage"+userAccount+"."+(headImage.substring((headImage.lastIndexOf(".")+1),headImage.length()));
-                if (!res.getRows().get(0).isEmpty()){
-                  vertx.fileSystem().rxDelete(headUrl).subscribe();
-              }
-                JsonArray setHeadImage =new JsonArray().
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxQueryWithParams("SELECT head_image FROM basic_account WHERE user_account= ?", new JsonArray().add(userAccount)).flatMap(res -> {
+                String headUrl = res.getRows().get(0).getString("head_image");
+                String path = "E:\\company\\image\\headImage" + userAccount + "." + (headImage.substring((headImage.lastIndexOf(".") + 1), headImage.length()));
+                if (!res.getRows().get(0).isEmpty()) {
+                    vertx.fileSystem().rxDelete(headUrl).subscribe();
+                }
+                JsonArray setHeadImage = new JsonArray().
                     add(path).
                     add(userAccount);
-              return vertx.fileSystem().rxCopy(headImage,path).andThen(
-                  conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ",setHeadImage).flatMap(result->{
-                      if (result.getUpdated()>0){
-                          return Single.just("success");
-                      }
-                      return Single.just("false");
-                  }));
-
-
+                return vertx.fileSystem().rxCopy(headImage, path).andThen(
+                    conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ", setHeadImage).flatMap(result -> {
+                        if (result.getUpdated() > 0) {
+                            return Single.just("success");
+                        }
+                        return Single.just("false");
+                    }));
             }));
-
     }
-
 
     public Single getMnemonics(String userAccount) {
         Dictionary dictionary = EnglishDictionary.instance();

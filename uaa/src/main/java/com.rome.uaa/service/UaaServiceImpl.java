@@ -91,7 +91,6 @@ public class UaaServiceImpl implements UaaService {
 
     }
 
-
     @Override
     public Single setPayPassword(String userAccount, String payPassword, String userPassword) {
         return accountRepository.setPayPassword(userAccount, payPassword, userPassword).doOnError(
@@ -108,8 +107,10 @@ public class UaaServiceImpl implements UaaService {
     public Single getMnemonics(String userAccount) {
         return accountRepository.getMnemonics(userAccount).doOnError(
             err -> logger.info(((Exception) err).getMessage()));
+    }
 
-    public  Single updateNickName(String userAccount,String nickName){
+    @Override
+    public Single updateNickName(String userAccount, String nickName) {
         return accountRepository.updateNickName(userAccount,nickName).doOnError(err ->{
             logger.info(((Exception) err).getMessage());
         });
@@ -121,12 +122,5 @@ public class UaaServiceImpl implements UaaService {
             logger.info(((Exception) err).getMessage());
         });
     }
-
-
-    @Override
-    public RoutingContext bbb(RoutingContext routingContext) {
-        return routingContext;
-    }
-
 
 }

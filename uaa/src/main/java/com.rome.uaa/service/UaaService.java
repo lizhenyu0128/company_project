@@ -66,7 +66,24 @@ public interface UaaService {
      */
     Single updatePayPassword(String userAccount,String payPassword,String newPayPassword);
 
-    RoutingContext bbb(RoutingContext routingContext);
-
     Single getMnemonics(String userAccount);
+
+    /**
+     *update nickName
+     * @param userAccount
+     * @param nickName
+     * @return Single
+     * @Author: sunYang
+     */
+    Single updateNickName(String userAccount,String nickName);
+
+    /**
+     *set headImage
+     * @param userAccount
+     * @param headImage
+     * @return Single
+     * @Author: sunYang
+     */
+    Single setHeadImage(String userAccount,String headImage);
+
 }
