@@ -108,6 +108,21 @@ public class UaaServiceImpl implements UaaService {
     }
 
     @Override
+    public  Single updateNickName(String userAccount,String nickName){
+        return accountRepository.updateNickName(userAccount,nickName).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+    @Override
+    public Single setHeadImage(String userAccount,String headImage){
+        return accountRepository.setHeadImage(userAccount,headImage).doOnError(err ->{
+            logger.info(((Exception) err).getMessage());
+        });
+    }
+
+
+    @Override
     public RoutingContext bbb(RoutingContext routingContext) {
         return routingContext;
     }

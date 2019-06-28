@@ -1,6 +1,7 @@
 package com.rome.common.service;
 
 import io.reactivex.Single;
+import io.vertx.reactivex.core.Vertx;
 
 /**
  * Author:
@@ -15,6 +16,14 @@ public interface CommonService {
      * @return Single
      */
     Single checkIdentity(String token);
+
+    /**
+     * select profit
+     * @return Single
+     */
+    Single selectProfit(Vertx vertx, io.vertx.reactivex.core.AbstractVerticle verticle, String path);
+
+
 
 
 }

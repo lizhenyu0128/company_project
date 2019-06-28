@@ -18,6 +18,8 @@ import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.redis.RedisClient;
 import org.mindrot.jbcrypt.BCrypt;
 
+import javax.print.DocFlavor;
+
 /**
  * Author:
  * Data:2019-05-13 13:10
@@ -32,12 +34,12 @@ public class AccountRepository {
     private RedisClient redisClient;
     private WebClient webClient;
 
-    public AccountRepository(AsyncSQLClient postgreSQLClient,Vertx vertx,MailClient mailClient,RedisClient redisClient,WebClient webClient){
+    public AccountRepository(AsyncSQLClient postgreSQLClient, Vertx vertx, MailClient mailClient, RedisClient redisClient, WebClient webClient) {
         this.postgreSQLClient = postgreSQLClient;
         this.vertx = vertx;
         this.mailClient = mailClient;
         this.redisClient = redisClient;
-        this.webClient =webClient;
+        this.webClient = webClient;
     }
 
     /**
@@ -49,55 +51,63 @@ public class AccountRepository {
      * 2 flatMap咋样返回常数
      * 3 用户id的生成规则
      */
-    public Single userSignUp(JsonArray singUpParam,String invitationCode) {
-        String code= InvitationCodeUtil.generateShortUuid();
+    public Single userSignUp(JsonArray singUpParam, String invitationCode) {
+        String code = InvitationCodeUtil.generateShortUuid();
         JsonArray memberRelation = new JsonArray();
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
-                conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?",new JsonArray().add(invitationCode)).flatMap(result->{
-                    if (result.getRows().isEmpty()) {
-                        if ("".equals(invitationCode)){
-                            memberRelation.add(singUpParam.getString(0)).
-                                            add(0).
-                                            add(0).
-                                            add(code);
-                        }else{
-                            return Single.just("false");
-                        }
-                    } else {
-                        memberRelation.add(singUpParam.getString(0)).
-                                       add(result.getRows().get(0).getInteger("level")).
-                                       add(result.getRows().get(0).getString("uid")).
-                                       add(code);
-                    }
-                    return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,1)",singUpParam).flatMap(reu->{
-                        if (reu.getUpdated()>0){
-                            return  conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)",memberRelation).flatMap(rest->{
-                                if (rest.getUpdated()>0){
-                                   return Single.just("success");
-                                }
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxQueryWithParams("SELECT user_password from basic_account where user_account=?", new JsonArray().add(singUpParam.getString(0))).flatMap(resultSet -> {
+                if (!resultSet.getRows().isEmpty()) {
+                    return Single.just("false0");
+                } else {
+                    return conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?", new JsonArray().add(invitationCode)).flatMap(result -> {
+                        if (result.getRows().isEmpty()) {
+                            if ("".equals(invitationCode)) {
+                                memberRelation.add(singUpParam.getString(0)).
+                                    add(0).
+                                    add(0).
+                                    add(code);
+                            } else {
                                 return Single.just("false");
-                            });
+                            }
+                        } else {
+                            memberRelation.add(singUpParam.getString(0)).
+                                add(result.getRows().get(0).getInteger("level")).
+                                add(result.getRows().get(0).getString("uid")).
+                                add(code);
                         }
+                        return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,1)", singUpParam).flatMap(reu -> {
+                            if (reu.getUpdated() > 0) {
+                                return conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)", memberRelation).flatMap(rest -> {
+                                    if (rest.getUpdated() > 0) {
+                                        return Single.just("success");
+                                    }
+                                    return Single.just("false");
+                                });
+                            }
                             return Single.just("false");
+                        });
                     });
-                }));
+                }
+            })
+        );
     }
 
     /**
      * login_type phone mail basic
+     *
      * @param u
      * @param userType
      * @return
      * @description login_type phone mail basic
      */
-    public Single userLogin(UserSingIn u,String userType) {
+    public Single userLogin(UserSingIn u, String userType) {
 
         if (!"basic".equals(u.getLoginType())) {
-            return userLoginByCode(u,userType);
+            return userLoginByCode(u, userType);
         }
         JsonArray loginParam = new JsonArray();
         loginParam.add(u.getUserAccount())
-                  .add(Integer.parseInt(userType));
+            .add(Integer.parseInt(userType));
         System.out.println(loginParam);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> conn.rxQueryWithParams(
             "SELECT a.user_account,a.use_status,a.user_mail,a.user_phone,a.user_password,b.identity_id FROM " +
@@ -168,7 +178,7 @@ public class AccountRepository {
      * @return
      * @description login_type phone mail basic
      */
-    private Single userLoginByCode(UserSingIn u,String userType) {
+    private Single userLoginByCode(UserSingIn u, String userType) {
         //查缓存
 
         String code = u.getVerificationCode();
@@ -187,12 +197,12 @@ public class AccountRepository {
         }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
             System.out.println("萨达萨达");
             JsonArray loginParam = new JsonArray()
-            .add(u.getUsingIp())
-            .add(u.getLongitude())
-            .add(u.getLatitude())
-            .add(phoneOrMail)
-            .add(phoneOrMail)
-            .add(Integer.parseInt(userType));
+                .add(u.getUsingIp())
+                .add(u.getLongitude())
+                .add(u.getLatitude())
+                .add(phoneOrMail)
+                .add(phoneOrMail)
+                .add(Integer.parseInt(userType));
             System.out.println(loginParam);
             return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
                 "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=? or user_mail=?", loginParam)
@@ -251,13 +261,13 @@ public class AccountRepository {
      * @description set payPassword
      * @Author: sunYang
      */
-    public Single setPayPassword(String userAccount,String payPassword,String userPassword){
-        JsonArray queryPaymentPassword=new JsonArray().
+    public Single setPayPassword(String userAccount, String payPassword, String userPassword) {
+        JsonArray queryPaymentPassword = new JsonArray().
             add(userAccount);
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
             conn.rxQuerySingleWithParams("SELECT user_password ,pay_password FROM basic_account WHERE" +
-                " user_account = ? ",queryPaymentPassword).flatMapSingle(res ->{
-                if (("").equals(res.getString(1))||(res.getString(1))==null) {
+                " user_account = ? ", queryPaymentPassword).flatMapSingle(res -> {
+                if (("").equals(res.getString(1)) || (res.getString(1)) == null) {
                     if (BCrypt.checkpw(userPassword, res.getString(0))) {
                         JsonArray setPayPassword = new JsonArray().
                             add(BCrypt.hashpw(payPassword, BCrypt.gensalt())).
@@ -273,7 +283,7 @@ public class AccountRepository {
                     } else {
                         return Single.just("false");
                     }
-                }else{
+                } else {
                     return Single.just("false0");
                 }
             })
@@ -289,39 +299,104 @@ public class AccountRepository {
      * @description update payPassword
      * @Author: sunYang
      */
-    public Single updatePayPassword(String userAccount,String payPassword,String newPayPassword){
-        System.out.println(userAccount+"/"+payPassword+"/"+newPayPassword);
-        JsonArray selectPayPassword=new JsonArray().
+    public Single updatePayPassword(String userAccount, String payPassword, String newPayPassword) {
+        System.out.println(userAccount + "/" + payPassword + "/" + newPayPassword);
+        JsonArray selectPayPassword = new JsonArray().
             add(userAccount);
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
-            conn.rxQuerySingleWithParams("SELECT pay_password FROM basic_account WHERE user_account= ?",selectPayPassword)
-                            .flatMapSingle(res ->{
-                                if (BCrypt.checkpw(payPassword,res.getString(0))){
-                                    System.out.println(BCrypt.hashpw(newPayPassword, BCrypt.gensalt()));
-                                    JsonArray updatePayPassword=new JsonArray().
-                                       add(BCrypt.hashpw(newPayPassword,BCrypt.gensalt())).
-                                       add(userAccount);
-                                    System.out.println(updatePayPassword);
-                                    return conn.rxUpdateWithParams("UPDATE basic_account SET pay_password=? where user_account=?",updatePayPassword)
-                                       .flatMap(result ->{
-                                       System.out.println(result.getUpdated());
-                                       if (result.getUpdated() > 0){
-                                           return Single.just("success");
-                                       }else{
-                                           return Single.error(new Exception("error"));
-                                       }
-                                   });
-                               }else{
-                                   return Single.just("false");
-                               }
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxQuerySingleWithParams("SELECT pay_password FROM basic_account WHERE user_account= ?", selectPayPassword)
+                .flatMapSingle(res -> {
+                    if (BCrypt.checkpw(payPassword, res.getString(0))) {
+                        System.out.println(BCrypt.hashpw(newPayPassword, BCrypt.gensalt()));
+                        JsonArray updatePayPassword = new JsonArray().
+                            add(BCrypt.hashpw(newPayPassword, BCrypt.gensalt())).
+                            add(userAccount);
+                        System.out.println(updatePayPassword);
+                        return conn.rxUpdateWithParams("UPDATE basic_account SET pay_password=? where user_account=?", updatePayPassword)
+                            .flatMap(result -> {
+                                System.out.println(result.getUpdated());
+                                if (result.getUpdated() > 0) {
+                                    return Single.just("success");
+                                } else {
+                                    return Single.error(new Exception("error"));
+                                }
+                            });
+                    } else {
+                        return Single.just("false");
+                    }
                 })
         );
+    }
+
+    /**
+     * update nickName
+     *
+     * @param userAccount
+     * @param nickName
+     * @return Single
+     * @Author: sunYang
+     */
+    public Single updateNickName(String userAccount, String nickName) {
+        System.out.println(userAccount + nickName);
+        JsonArray updateNickName = new JsonArray().
+            add(nickName).
+            add(userAccount);
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
+            conn.rxUpdateWithParams("UPDATE basic_account SET nick_name=? where user_account=? ", updateNickName).flatMap(res -> {
+                if (res.getUpdated() > 0) {
+                    return Single.just("success");
+                }
+                return Single.just("false");
+            })
+        );
+    }
+
+    /**
+     * set headImage
+     *
+     * @param userAccount
+     * @param headImage
+     * @return Single
+     * @Author: sunYang
+     */
+    public Single setHeadImage(String userAccount, String headImage) {
+
+        return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
+            conn.rxQueryWithParams("SELECT head_image FROM basic_account WHERE user_account= ?",new JsonArray().add(userAccount)).flatMap(res->{
+                String headUrl=res.getRows().get(0).getString("head_image");
+                String path="E:\\company\\image\\headImage"+userAccount+"."+(headImage.substring((headImage.lastIndexOf(".")+1),headImage.length()));
+                if (!res.getRows().get(0).isEmpty()){
+                  vertx.fileSystem().rxDelete(headUrl).subscribe();
+              }
+                JsonArray setHeadImage =new JsonArray().
+                    add(path).
+                    add(userAccount);
+              return vertx.fileSystem().rxCopy(headImage,path).andThen(
+                  conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ",setHeadImage).flatMap(result->{
+                      if (result.getUpdated()>0){
+                          return Single.just("success");
+                      }
+                      return Single.just("false");
+                  }));
+
+
+            }));
+
     }
 
 
 
 
 }
+
+
+
+
+
+
+
+
+
 
 
 
