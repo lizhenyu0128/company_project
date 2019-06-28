@@ -5,11 +5,9 @@ import com.rome.uaa.entity.UserSingIn;
 import com.rome.uaa.repository.AccountRepository;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.PubSecKeyOptions;
 import io.vertx.ext.auth.jwt.JWTAuthOptions;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.ext.auth.User;
 import io.vertx.reactivex.ext.auth.jwt.JWTAuth;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import org.mindrot.jbcrypt.BCrypt;
@@ -28,6 +26,7 @@ public class UaaServiceImpl implements UaaService {
     private final static Logger logger = LoggerFactory.getLogger(UaaServiceImpl.class);
     private AccountRepository accountRepository;
     private JWTAuth provide;
+
     public UaaServiceImpl(AccountRepository repository, Vertx vertx) {
 
         this.accountRepository = repository;
@@ -41,7 +40,7 @@ public class UaaServiceImpl implements UaaService {
 
 
     @Override
-    public Single userSignUp(UserSignUp userSignUp,String invitationCode) {
+    public Single userSignUp(UserSignUp userSignUp, String invitationCode) {
         String encryptPassWord = BCrypt.hashpw(userSignUp.getUserPassword(), BCrypt.gensalt());
         JsonArray singUpParam = new JsonArray()
             .add(userSignUp.getUserAccount())
@@ -53,7 +52,7 @@ public class UaaServiceImpl implements UaaService {
             .add(userSignUp.getNickName())
             .add(userSignUp.getLongitude())
             .add(userSignUp.getLatitude());
-        return accountRepository.userSignUp(singUpParam,invitationCode).doOnError(err ->
+        return accountRepository.userSignUp(singUpParam, invitationCode).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
 
@@ -72,7 +71,7 @@ public class UaaServiceImpl implements UaaService {
      * @return
      */
     @Override
-    public Single userLogin(UserSingIn u,String userType) {
+    public Single userLogin(UserSingIn u, String userType) {
         if (!"basic".equals(u.getLoginType())) {
             if ("loginPhone".equals(u.getLoginType())) {
                 u.setUserMail("null");
@@ -80,38 +79,36 @@ public class UaaServiceImpl implements UaaService {
                 u.setUserPhone("null");
             }
         }
-        return accountRepository.userLogin(u,userType).doOnError(err ->
+        return accountRepository.userLogin(u, userType).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
 
     @Override
-    public Single resetPassword(String userAccount,String newPassword,String code,String content) {
-        return accountRepository.resetPassword(userAccount,newPassword,code,content).doOnError(err ->{
+    public Single resetPassword(String userAccount, String newPassword, String code, String content) {
+        return accountRepository.resetPassword(userAccount, newPassword, code, content).doOnError(err -> {
             logger.info(((Exception) err).getMessage());
-            });
+        });
 
     }
 
 
     @Override
-    public Single setPayPassword(String userAccount,String payPassword,String userPassword){
-        return accountRepository.setPayPassword(userAccount,payPassword,userPassword).doOnError(err ->{
-            logger.info(((Exception) err).getMessage());
+    public Single setPayPassword(String userAccount, String payPassword, String userPassword) {
+        return accountRepository.setPayPassword(userAccount, payPassword, userPassword).doOnError(
+            err -> logger.info(((Exception) err).getMessage()));
+    }
+
+    @Override
+    public Single updatePayPassword(String userAccount, String payPassword, String newPayPassword) {
+        return accountRepository.updatePayPassword(userAccount, payPassword, newPayPassword).doOnError(err -> {
         });
     }
 
     @Override
-    public Single updatePayPassword(String userAccount,String payPassword,String newPayPassword){
-        return accountRepository.updatePayPassword(userAccount,payPassword,newPayPassword).doOnError(err ->{
-            logger.info(((Exception) err).getMessage());
-        });
+    public Single getMnemonics(String userAccount) {
+        return accountRepository.getMnemonics(userAccount).doOnError(
+            err -> logger.info(((Exception) err).getMessage()));
     }
-
-    @Override
-    public RoutingContext bbb(RoutingContext routingContext) {
-        return routingContext;
-    }
-
 
 
 }

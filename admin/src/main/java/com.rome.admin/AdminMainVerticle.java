@@ -31,9 +31,9 @@ import java.io.File;
 /**
  * @author asus
  */
-public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle{
+public class AdminMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/admin/src/resources" + File.separator + "config-dev.json";
-   // private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    // private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(AdminMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -68,7 +68,7 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
 
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
-                adminService = new AdminServiceImpl(new AdminRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
+                adminService = new AdminServiceImpl(new AdminRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
                 routerController();
             });
@@ -76,7 +76,7 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
         }, err -> logger.error(((Exception) err).getMessage()));
     }
 
-    public  void routerController(){
+    public void routerController() {
         //获取某个服务
         JsonObject uaa01 = discovery.rxGetRecord(new JsonObject().put("name", "uaa01")).blockingGet().getMetadata();
         JsonObject message01 = discovery.rxGetRecord(new JsonObject().put("name", "message01")).blockingGet().getMetadata();
@@ -114,24 +114,24 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
         router.get("/api/admin/inquireBalance").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
 
-            adminService.inquireBalance(userAccount).subscribe(result ->{
-                if("false".equals(result)){
+            adminService.inquireBalance(userAccount).subscribe(result -> {
+                if ("false".equals(result)) {
                     ResponseJSON.falseJson(routingContext, "false");
-                }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()), "success");
+                } else {
+                    ResponseJSON.successJson(routingContext, JSON.parseArray(result.toString()), "success");
                 }
             });
         });
 
         // inquire balance by userAccount
         router.get("/api/admin/inquireByUserAccount").handler(routingContext -> {
-            String inquireAccount =routingContext.request().getParam("inquireAccount");
+            String inquireAccount = routingContext.request().getParam("inquireAccount");
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            adminService.inquireByUserAccount(userAccount,inquireAccount).subscribe(result ->{
-                if("false".equals(result)){
+            adminService.inquireByUserAccount(userAccount, inquireAccount).subscribe(result -> {
+                if ("false".equals(result)) {
                     ResponseJSON.falseJson(routingContext, "false");
-                }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()), "success");
+                } else {
+                    ResponseJSON.successJson(routingContext, JSON.parseArray(result.toString()), "success");
                 }
 
             });
@@ -143,29 +143,21 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
             String toAccount = routingContext.getBodyAsJson().getString("toAccount");
             String fromAccount = routingContext.getBodyAsJson().getString("fromAccount");
             String amount = routingContext.getBodyAsJson().getString("amount");
-            String coinType =  routingContext.getBodyAsJson().getString("coinType");
-            String message=  routingContext.getBodyAsJson().getString("message");
+            String coinType = routingContext.getBodyAsJson().getString("coinType");
+            String message = routingContext.getBodyAsJson().getString("message");
 
-            adminService.addTransactionRecord(userAccount,toAccount,fromAccount,amount,coinType,message).subscribe(result ->{
-                if("success".equals(result)){
+            adminService.addTransactionRecord(userAccount, toAccount, fromAccount, amount, coinType, message).subscribe(result -> {
+                if ("success".equals(result)) {
                     ResponseJSON.successJson(routingContext, "success");
-                }else{
+                } else {
                     ResponseJSON.falseJson(routingContext, "false");
                 }
-            },err->ResponseJSON.errJson(routingContext));
+            }, err -> ResponseJSON.errJson(routingContext));
         });
 
 
-
-
-
-
-
-
-
-
-
     }
+
     private Completable consulInit(JsonObject config) {
         //consul发现服务
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),

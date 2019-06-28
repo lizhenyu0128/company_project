@@ -46,6 +46,8 @@ import org.nightcode.bip39.dictionary.Dictionary;
 import org.nightcode.bip39.dictionary.EnglishDictionary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.xml.ws.Response;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -58,7 +60,7 @@ import java.util.Date;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-//    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    //    private final static String CONFIG_PATH = "F:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
     private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
 
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
@@ -69,6 +71,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private CommonService commonService;
     private ServiceDiscovery discovery;
     private WebClient webClient;
+
     @Override
     public void start(Future<Void> startFuture) {
 
@@ -94,7 +97,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 webClient = WebClient.create(vertx);
 
                 // 配置传递
-                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient,webClient), vertx);
+                uaaService = new UaaServiceImpl(new AccountRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
                 commonService = new CommonServiceImpl(vertx);
 
                 routerController();
@@ -130,7 +133,6 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             .handler(routingContext -> {
                 String token;
                 token = routingContext.request().headers().get("token");
-
                 if (token == null) {
                     ResponseJSON.falseJson(routingContext, "验证错误");
                 }
@@ -138,7 +140,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     routingContext.put("token", res.toString());
                     routingContext.next();
                 }, err -> ResponseJSON.errJson(routingContext));
-            });
+            }).failureHandler(frc -> ResponseJSON.falseJson(frc, "false"));
 
         // protect router demo
         router.get("/api/user/sss").handler(routingContext -> {
@@ -153,37 +155,36 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             UserSignUp userSignUp = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSignUp.class);
             //判断实体类
             ValidatorUtil.checkEntity(userSignUp);
-            String invitationCode=routingContext.getBodyAsJson().getString("invitationCode");
+            String invitationCode = routingContext.getBodyAsJson().getString("invitationCode");
 
-            uaaService.userSignUp(userSignUp,invitationCode).subscribe(result ->{
-                if ("success".equals(result)){
+            uaaService.userSignUp(userSignUp, invitationCode).subscribe(result -> {
+                if ("success".equals(result)) {
                     Date date = new Date();
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
                     String nowTime = format.format(date);
                     Single<HttpResponse<Buffer>> req = webClient.post(80, "api.caodabi.com", "/v2/account")
-                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp="+nowTime+",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
-                        .rxSendJsonObject(new JsonObject().put("userID",userSignUp.getUserAccount()));
+                        .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9")
+                        .rxSendJsonObject(new JsonObject().put("userID", userSignUp.getUserAccount()));
                     req.subscribe(res -> {
                         if (res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()) {
-                            ResponseJSON.falseJson(routingContext,"注册失败");
+                            ResponseJSON.falseJson(routingContext, "注册失败");
                         } else {
                             ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), "注册成功");
                         }
-                    } , error -> ResponseJSON.errJson(routingContext));
-                }else {
-                    ResponseJSON.falseJson(routingContext,"注册失败");
+                    }, error -> ResponseJSON.errJson(routingContext));
+                } else {
+                    ResponseJSON.falseJson(routingContext, "注册失败");
                 }
             });
         });
 
         // user sign in
         router.post("/api/login").handler(routingContext -> {
-
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
             String userType = routingContext.getBodyAsJson().getString("userType");
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn,userType).subscribe(result -> ResponseJSON.successJson(routingContext,new JsonObject().put("token",result), "登陆成功")
+            uaaService.userLogin(userSingIn, userType).subscribe(result -> ResponseJSON.successJson(routingContext, new JsonObject().put("token", result), "登陆成功")
                 , error -> ResponseJSON.falseJson(routingContext, "登陆失败"));
         });
 
@@ -234,19 +235,19 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         router.put("/api/user/setPayPassword").handler(routingContext -> {
 
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String userPassword=routingContext.getBodyAsJson().getString("userPassword");
-            String payPassword=routingContext.getBodyAsJson().getString("payPassword");
+            String userPassword = routingContext.getBodyAsJson().getString("userPassword");
+            String payPassword = routingContext.getBodyAsJson().getString("payPassword");
 
-            if ("".equals(payPassword)||null==payPassword){
+            if ("".equals(payPassword) || null == payPassword) {
                 ResponseJSON.successJson(routingContext, "请输入支付密码");
-            }else{
-                uaaService.setPayPassword(userAccount,payPassword,userPassword).subscribe(result ->{
-                    if ("success".equals(result)){
+            } else {
+                uaaService.setPayPassword(userAccount, payPassword, userPassword).subscribe(result -> {
+                    if ("success".equals(result)) {
                         ResponseJSON.successJson(routingContext, "设置成功");
-                    }else if("false".equals(result)){
-                        ResponseJSON.falseJson(routingContext,"密码验证失败");
-                    }else {
-                        ResponseJSON.falseJson(routingContext,"已设置支付密码");
+                    } else if ("false".equals(result)) {
+                        ResponseJSON.falseJson(routingContext, "密码验证失败");
+                    } else {
+                        ResponseJSON.falseJson(routingContext, "已设置支付密码");
                     }
                 }, error -> ResponseJSON.errJson(routingContext));
             }
@@ -254,47 +255,60 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
         // update payPassword
-        router.put("/api/user/updatePayPassword").handler(routingContext ->{
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
+        router.put("/api/user/updatePayPassword").handler(routingContext -> {
+            String userAccount = JSON.parseObject(routingContext.get("tok1en"), Token.class).getUser_account();
 
-            String payPassword=routingContext.getBodyAsJson().getString("payPassword");
-            String newPayPassword=routingContext.getBodyAsJson().getString("newPayPassword");
+            String payPassword = routingContext.getBodyAsJson().getString("payPassword");
+            String newPayPassword = routingContext.getBodyAsJson().getString("newPayPassword");
 
-            uaaService.updatePayPassword(userAccount,payPassword,newPayPassword).subscribe(result ->{
-                if ("success".equals(result)){
-                    ResponseJSON.successJson(routingContext,  "修改成功");
-                }else{
-                    ResponseJSON.falseJson(routingContext,"支付密码输入错误");
+            uaaService.updatePayPassword(userAccount, payPassword, newPayPassword).subscribe(result -> {
+                if ("success".equals(result)) {
+                    ResponseJSON.successJson(routingContext, "修改成功");
+                } else {
+                    ResponseJSON.falseJson(routingContext, "支付密码输入错误");
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
 
 //        //获取一个助记词
         router.get("/api/user/getMnemonics").handler(routingContext -> {
-            Dictionary dictionary = EnglishDictionary.instance();
-            Bip39 bip39 = new Bip39(dictionary);
-            byte[] entropy = bip39.generateEntropy(EntropyDesc.ENT_128);
-            System.out.println(Arrays.toString(entropy));
-            String mnemonics = bip39.createMnemonic(entropy);
-            //2. 由助记词得到种子
+            String userAccount = JSON.parseObject(routingContext.get("toke2n"), Token.class).getUser_account();
+            uaaService.getMnemonics(userAccount).subscribe(res -> {
+                ResponseJSON.successJson(routingContext, res, "success");
+            }, err -> ResponseJSON.falseJson(routingContext, "false"));
+        });
+
+        //获取一个私钥
+        router.get("/api/user/getPrivateKey").handler(routingContext -> {
+            System.out.println("asd");
+            String mnemonics = routingContext.getBodyAsJson().getString("mnemonics");
+            if (mnemonics == null) {
+                ResponseJSON.falseJson(routingContext, "false");
+            }
+            System.out.println(mnemonics);
             byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");
             System.out.println(seed);
             ExtendedPrivateKey rootPrivateKey = ExtendedPrivateKey.fromSeed(seed, Bitcoin.MAIN_NET);
-            byte[] pvc = rootPrivateKey.getKey();
-
-            String src = "1111";
-            String src2 = "1211";
-            BouncyCastleCrypto bcc = new BouncyCastleCrypto();
-            byte[] res = bcc.sign(src.getBytes(StandardCharsets.UTF_8), pvc);
-            System.out.println("签名：" + Hex.encodeHexString(res));
-            System.out.println("验证：" + bcc.verify(src2.getBytes(StandardCharsets.UTF_8), res, bcc.getPublicFor(pvc)));
+            String privateKey = rootPrivateKey.getPrivateKey();
+            ResponseJSON.successJson(routingContext, privateKey, "success");
+        });
 
 
-    });
+        //2. 由助记词得到种子
+//            byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");
+//            System.out.println(seed);
+//            ExtendedPrivateKey rootPrivateKey = ExtendedPrivateKey.fromSeed(seed, Bitcoin.MAIN_NET);
+//            byte[] pvc = rootPrivateKey.getKey();
+//
+//            String src = "1111";
+//            String src2 = "1211";
+//            BouncyCastleCrypto bcc = new BouncyCastleCrypto();
+//            byte[] res = bcc.sign(src.getBytes(StandardCharsets.UTF_8), pvc);
+//            System.out.println("签名：" + Hex.encodeHexString(res));
+//            System.out.println("验证：" + bcc.verify(src2.getBytes(StandardCharsets.UTF_8), res, bcc.getPublicFor(pvc)));
 
 
-}
-
+    }
 
 
     private Completable consulInit(JsonObject config) {
