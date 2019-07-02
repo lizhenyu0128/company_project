@@ -39,9 +39,6 @@ public class AdminRepository {
         JsonArray viewPermissions = new JsonArray().add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn->
             conn.rxQueryWithParams("SELECT user_type from basic_account where user_account = ?",viewPermissions).flatMap(res->{
-                System.out.println(res.getRows());
-                System.out.println(res.getRows().get(0));
-                System.out.println(res.getRows().get(0).getInteger("user_type")+"55555555555555555555");
                 if (2==res.getRows().get(0).getInteger("user_type")){
                     JsonArray checkBalance = new JsonArray();
                     return conn.rxQueryWithParams("select coalesce(v_balance_btc.user_account,v_balance_eos.user_account,v_balance_usdt.user_account,v_balance_eth.user_account) AS user_account, \n" +
@@ -52,13 +49,14 @@ public class AdminRepository {
                         "from v_balance_btc  full outer join v_balance_eos on v_balance_btc.user_account=v_balance_eos.user_account \n" +
                         "full outer join v_balance_eth on v_balance_btc.user_account=v_balance_eth.user_account \n" +
                         "full outer join v_balance_usdt on v_balance_btc.user_account=v_balance_usdt.user_account",checkBalance).flatMap(result ->{
+                        System.out.println(result.getRows());
                         if (!result.getRows().isEmpty()){
                             return Single.just(result.getRows());
                         }
                         return  Single.just("false");
                     } );
                 }
-                return  Single.just("false");
+                return  Single.just("false0");
             })
         );
     }
@@ -91,7 +89,7 @@ public class AdminRepository {
                         return  Single.just("false");
                     } );
                 }
-                return  Single.just("false");
+                return  Single.just("false0");
             })
         );
     }
@@ -125,13 +123,13 @@ public class AdminRepository {
                                 if (resultSet.getUpdated()>0){
                                     return Single.just("success");
                                 }
-                                return  Single.just("false");
+                                return  Single.just("false0");
                             });
                         }
-                        return Single.just("false");
+                        return Single.just("false1");
                     });
                 }
-                return Single.just("false");
+                return Single.just("false2");
             })
         );
     }

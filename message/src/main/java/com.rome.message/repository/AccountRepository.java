@@ -1,4 +1,5 @@
 package com.rome.message.repository;
+import com.rome.common.status.MessageStatus;
 import com.rome.common.util.VerificationCode;
 import io.reactivex.Single;
 import io.vertx.ext.mail.MailMessage;
@@ -37,10 +38,10 @@ public class AccountRepository {
         short effSeconds = 300;
         int mailCode = VerificationCode.getRandomNum();
         MailMessage message = new MailMessage();
-        message.setFrom("879681805@qq.com");
+        message.setFrom(MessageStatus.SENDEMAIL_SETFROM);
         message.setTo(recipient);
-        message.setCc("Another User <another@example.net>");
-        message.setText("您的验证码:" + mailCode + ",有效期为:" + effSeconds / 60 + "分钟");
+        message.setCc(MessageStatus.SENDEMAIL_SETCC);
+        message.setText(MessageStatus.SENDEMAIL_MESSAGE0 + mailCode + MessageStatus.SENDEMAIL_MESSAGE1 + effSeconds / 60 + MessageStatus.SENDEMAIL_MESSAGE2);
         return Single.concat(redisClient.rxSetex(recipient + useType, effSeconds, Integer.toString(mailCode)),
             mailClient.rxSendMail(message)).lastOrError();
     }

@@ -1,0 +1,31 @@
+{
+    "Describe": {
+        "PostgreSQL": "数据库配置",
+        "ConfigSMTP": "邮件配置",
+        "RedisClient": "redis配置",
+        "ConsulConfig": "RPC配置",
+        "ConsulServer": "consul存在的服务"
+    },
+    "PostgreSQL": {
+        "host": "localhost",
+        "driver_class": "org.postgresql.Driver",
+        "username": "postgres",
+        "password": "123456",
+        "database": "company_db"
+    },
+    "ConfigSMTP": {
+        "port": 587,
+        "hostName": "smtp.qq.com",
+        "userName": "879681805@qq.com",
+        "passWord": "urquajrzliwdbfjf"
+    },
+    "RedisClient": {
+        "port": 6379
+    },
+    "ConsulConfig": {
+        "host": "localhost",
+        "port": 8500
+    },
+    "ConsulServer": {
+    }
+}

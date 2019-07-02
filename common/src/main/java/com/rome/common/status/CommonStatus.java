@@ -1,0 +1,12 @@
+package com.rome.common.status;
+
+/**
+ * @author asus
+ */
+public class CommonStatus {
+
+    public static final String CONFIGURATION="初始化配置成功";
+
+    public static final String CHECKTOKEN="验证错误";
+
+}

@@ -81,7 +81,7 @@ public class WalletNativeRepository {
                             if (result.getUpdated()>0){
                                 return Single.just("success");
                             }else{
-                                return Single.error(new Exception("交易失败"));
+                                return Single.error(new Exception("err"));
                             }
                         });
                     }
@@ -116,7 +116,7 @@ public class WalletNativeRepository {
 
 
     /**
-     * select BasicAccount
+     * create cashOrder
      * @param userAccount
      * @param cash
      * @param coinType
