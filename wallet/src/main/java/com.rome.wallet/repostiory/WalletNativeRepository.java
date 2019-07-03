@@ -134,7 +134,7 @@ public class WalletNativeRepository {
             add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
             conn.rxQueryWithParams("SELECT user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type  from basic_account where user_account= ?",sba).flatMap(res ->{
-                if (!"".equals(res.getRows())){
+                if (!res.getRows().isEmpty()){
                     System.out.println(111);
                     cash.setUserContext(res.getRows().get(0).toString());
                     Date date = new Date();
