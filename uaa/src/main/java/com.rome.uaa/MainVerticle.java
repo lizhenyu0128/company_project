@@ -262,7 +262,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         //set head image
         router.put("/api/user/setHeadImage").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\666.jpg";
+            String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\4444.png";
             uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
                 if ("success".equals(result)) {
                     ResponseJSON.successJson(routingContext, UaaStatus.SET_SUCCESS);
@@ -311,7 +311,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     }
 
     private Completable consulInit(JsonObject config) {
-        //consol发现服务
+        //consul发现服务
         return Completable.create((emitter) -> discovery.registerServiceImporter(ServiceImporter.newInstance(new ConsulServiceImporter()),
             new JsonObject()
                 //发现远端注册中心

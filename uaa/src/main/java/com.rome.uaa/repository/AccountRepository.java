@@ -371,22 +371,20 @@ public class AccountRepository {
      * @Author: sunYang
      */
     public Single setHeadImage(String userAccount, String headImage) {
+        System.out.println(1111);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
             conn.rxQueryWithParams("SELECT head_image FROM basic_account WHERE user_account= ?", new JsonArray().add(userAccount)).flatMap(res -> {
                 String headUrl = res.getRows().get(0).getString("head_image");
                 String path = "E:\\company\\image\\headImage\\" + userAccount + "." + (headImage.substring((headImage.lastIndexOf(".") + 1), headImage.length()));
-                System.out.println(res.getRows().get(0).getString("head_image").isEmpty());
                 System.out.println(res.getRows().get(0).getString("head_image"));
-                if (!res.getRows().get(0).getString("head_image").isEmpty()) {
+               if (!res.getRows().get(0).getString("head_image").isEmpty()||"null".equals(res.getRows().get(0).getString("head_image"))) {
                     vertx.fileSystem().rxDelete(headUrl).subscribe();
                 }
-                System.out.println(444);
                 JsonArray setHeadImage = new JsonArray().
                     add(path).
                     add(userAccount);
                 return vertx.fileSystem().rxCopy(headImage, path).andThen(
                     conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ", setHeadImage).flatMap(result -> {
-                        System.out.println(result.toString());
                         if (result.getUpdated() > 0) {
                             return Single.just("success");
                         }
