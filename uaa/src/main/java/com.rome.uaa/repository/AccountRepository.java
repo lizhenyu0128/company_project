@@ -127,7 +127,7 @@ public class AccountRepository {
                 "user_account=? AND user_type= ?", loginParam)
             .flatMap(res -> {
                 if (res.getRows().isEmpty()) {
-                    return Single.error(new Exception(UaaStatus.SIGNIN_NULLFALSE));
+                    return Single.error(new Exception(UaaStatus.SIGN_IN_USER));
                 }
                 JsonObject loginView = res.getRows().get(0);
                 System.out.println(loginView);
@@ -155,7 +155,7 @@ public class AccountRepository {
                             return Single.error(new Exception("false"));
                         });
                 } else {
-                    return Single.error(new Exception(UaaStatus.SIGNIN_PASSWORDFALSE));
+                    return Single.error(new Exception(UaaStatus.SIGN_IN_PASSWORD_ERROR));
                 }
             }));
     }
@@ -203,7 +203,7 @@ public class AccountRepository {
                 System.out.println("哈哈哈哈哈");
                 return true;
             } else {
-                throw new Error(UaaStatus.SIGNIN_CODEFALSE);
+                throw new Error(UaaStatus.SIGN_IN_CODE_ERROR);
             }
         }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
             System.out.println("萨达萨达");

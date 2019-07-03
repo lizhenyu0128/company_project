@@ -38,10 +38,10 @@ public class AccountRepository {
         short effSeconds = 300;
         int mailCode = VerificationCode.getRandomNum();
         MailMessage message = new MailMessage();
-        message.setFrom(MessageStatus.SENDEMAIL_SETFROM);
+        message.setFrom(MessageStatus.SEND_EMAIL_SET_FROM);
         message.setTo(recipient);
-        message.setCc(MessageStatus.SENDEMAIL_SETCC);
-        message.setText(MessageStatus.SENDEMAIL_MESSAGE0 + mailCode + MessageStatus.SENDEMAIL_MESSAGE1 + effSeconds / 60 + MessageStatus.SENDEMAIL_MESSAGE2);
+        message.setCc(MessageStatus.SEND_EMAIL_SET_CC);
+        message.setText(MessageStatus.SEND_EMAIL_MESSAGE0 + mailCode + MessageStatus.SEND_EMAIL_MESSAGE1 + effSeconds / 60 + MessageStatus.SEND_EMAIL_MESSAGE2);
         return Single.concat(redisClient.rxSetex(recipient + useType, effSeconds, Integer.toString(mailCode)),
             mailClient.rxSendMail(message)).lastOrError();
     }

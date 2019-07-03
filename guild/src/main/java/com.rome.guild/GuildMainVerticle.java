@@ -104,7 +104,7 @@ public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
                 String token;
                 token = routingContext.request().headers().get("token");
                 if (token == null) {
-                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECKTOKEN);
+                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECK_TOKEN);
                 }
                 commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());

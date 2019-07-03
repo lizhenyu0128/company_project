@@ -119,7 +119,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                 String token;
                 token = routingContext.request().headers().get("token");
                 if (token == null) {
-                    ResponseJSON.falseJson(routingContext,CommonStatus.CHECKTOKEN);
+                    ResponseJSON.falseJson(routingContext,CommonStatus.CHECK_TOKEN);
                 }
                 commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
@@ -145,16 +145,16 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                         .rxSendJsonObject(new JsonObject().put("userID", userSignUp.getUserAccount()));
                     req.subscribe(res -> {
                         if (res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()) {
-                            ResponseJSON.falseJson(routingContext,UaaStatus.SIGNUP_FALSE);
+                            ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_FALSE);
                         } else {
-                            ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), UaaStatus.SIGNUP_SUCCESS);
+                            ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), UaaStatus.SIGN_UP_SUCCESS);
                         }
 
                     }, error -> ResponseJSON.errJson(routingContext));
                 } else if ("false".equals(result)) {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGNUP_FALSE);
+                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_FALSE);
                 } else {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGNUP_REFALSE);
+                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_RESIGN);
                 }
             });
         });
@@ -165,8 +165,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
             String userType = routingContext.getBodyAsJson().getString("userType");
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn, userType).subscribe(result -> ResponseJSON.successJson(routingContext, new JsonObject().put("token", result),UaaStatus.SIGNIN_SUCCESS)
-                , error -> ResponseJSON.falseJson(routingContext, UaaStatus.SIGNIN_FALSE));
+            uaaService.userLogin(userSingIn, userType).subscribe(result -> ResponseJSON.successJson(routingContext, new JsonObject().put("token", result),UaaStatus.SIGN_IN_SUCCESS)
+                , error -> ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_IN_FALSE));
         });
 
         // send SMS or mail
@@ -185,9 +185,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     .build();
                 stub.getVerificationCode(request, ar -> {
                     if (ar.succeeded()) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.SENGMSG_SUCCESS);
+                        ResponseJSON.successJson(routingContext,UaaStatus.SEND_MSG_SUCCESS);
                     } else {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SENGMSG_FALSE);
+                        ResponseJSON.falseJson(routingContext,UaaStatus.SEND_MSG_FALSE);
                     }
                 });
             }
@@ -201,12 +201,11 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String phone = routingContext.getBodyAsJson().getString("phone");
             uaaService.resetPassword(userAccount, newPassword, code, phone).subscribe(result -> {
                     if ((Boolean) result) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.RESETPASSWORD_SUCCESS);
+                        ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
                     } else {
-                        ResponseJSON.falseJson(routingContext, UaaStatus.RESETPASSWORD_FALSE);
+                        ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_FALSE);
                     }
-                }
-                , error -> ResponseJSON.errJson(routingContext));
+                },error -> ResponseJSON.errJson(routingContext));
         });
 
         // set payPassword
@@ -217,15 +216,15 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String payPassword = routingContext.getBodyAsJson().getString("payPassword");
 
             if ("".equals(payPassword) || null == payPassword) {
-                ResponseJSON.successJson(routingContext,UaaStatus.SETPAYPASSWORD_PAYPASSWORDINPUT);
+                ResponseJSON.successJson(routingContext,UaaStatus.FORMAT);
             } else {
                 uaaService.setPayPassword(userAccount, payPassword, userPassword).subscribe(result -> {
                     if ("success".equals(result)) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.SETPAYPASSWORD_SUCCESS);
+                        ResponseJSON.successJson(routingContext,UaaStatus.SET_SUCCESS);
                     } else if ("false".equals(result)) {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SETPAYPASSWORD_PASSWORDFALSE);
+                        ResponseJSON.falseJson(routingContext,UaaStatus.SET_PAY_PASSWORD_PASSWORD_ERROR);
                     } else {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SETPAYPASSWORD_PAYPASSWORDRESET);
+                        ResponseJSON.falseJson(routingContext,UaaStatus.SET_PAY_PASSWORD_PAY_PASSWORD_RESET);
                     }
                 }, error -> ResponseJSON.errJson(routingContext));
             }
@@ -240,9 +239,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
             uaaService.updatePayPassword(userAccount, payPassword, newPayPassword).subscribe(result -> {
                 if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATEPAYPASSWORD_SUCCESS);
+                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
                 } else {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.UPDATEPAYPASSWORD_FALSE);
+                    ResponseJSON.falseJson(routingContext,UaaStatus.UPDATE_PAY_PASSWORD_FALSE);
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
@@ -253,9 +252,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String nickName = routingContext.getBodyAsJson().getString("nickName");
             uaaService.updateNickName(userAccount, nickName).subscribe(result -> {
                 if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATENICKNAME_SUCCESS);
+                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
                 } else {
-                    ResponseJSON.falseJson(routingContext, UaaStatus.UPDATENICKNAME_FALSE);
+                    ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_FALSE);
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
@@ -266,9 +265,9 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\666.jpg";
             uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
                 if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext, UaaStatus.SETHEADIMAGE_SUCCESS);
+                    ResponseJSON.successJson(routingContext, UaaStatus.SET_SUCCESS);
                 } else {
-                    ResponseJSON.falseJson(routingContext, UaaStatus.SETHEADIMAGE_FALSE);
+                    ResponseJSON.falseJson(routingContext, UaaStatus.SET_FALSE);
                 }
             }, error -> ResponseJSON.errJson(routingContext));
 
@@ -278,8 +277,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         router.get("/api/user/getMnemonics").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             uaaService.getMnemonics(userAccount).subscribe(res -> {
-                ResponseJSON.successJson(routingContext, res,UaaStatus.GETMNEMONICS_SUCCESS);
-            }, err -> ResponseJSON.falseJson(routingContext, UaaStatus.GETMNEMONICS_FALSE));
+                ResponseJSON.successJson(routingContext, res,UaaStatus.GET_SUCCESS);
+            }, err -> ResponseJSON.falseJson(routingContext, UaaStatus.GET_FALSE));
         });
 
         //获取一个私钥
@@ -287,14 +286,14 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             System.out.println("asd");
             String mnemonics = routingContext.getBodyAsJson().getString("mnemonics");
             if (mnemonics == null) {
-                ResponseJSON.falseJson(routingContext, UaaStatus.GETPRIVATEKEY_FALSE);
+                ResponseJSON.falseJson(routingContext, UaaStatus.GET_FALSE);
             }
             System.out.println(mnemonics);
             byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");
             System.out.println(seed);
             ExtendedPrivateKey rootPrivateKey = ExtendedPrivateKey.fromSeed(seed, Bitcoin.MAIN_NET);
             String privateKey = rootPrivateKey.getPrivateKey();
-            ResponseJSON.successJson(routingContext, privateKey, UaaStatus.GETPRIVATEKEY_SUCCESS);
+            ResponseJSON.successJson(routingContext, privateKey, UaaStatus.GET_SUCCESS);
         });
 
         //2. 由助记词得到种子

@@ -126,7 +126,7 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                 String token;
                 token = routingContext.request().headers().get("token");
                 if (token == null) {
-                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECKTOKEN);
+                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECK_TOKEN);
                 }
                 commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
@@ -217,9 +217,9 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             cash.setUserID(userAccount);
             walletNativeService.createCashOrder(userAccount,cash,coinType).subscribe(result ->{
                 if ("success".equals(result)){
-                    ResponseJSON.successJson(routingContext, WalletStatus.CREATEORDER_SUCCESS);
+                    ResponseJSON.successJson(routingContext, WalletStatus.CREATE_ORDER_SUCCESS);
                 }else{
-                    ResponseJSON.falseJson(routingContext,WalletStatus.CREATEORDER_FALSE);
+                    ResponseJSON.falseJson(routingContext,WalletStatus.CREATE_ORDER_FALSE);
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
@@ -242,13 +242,13 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                     req.subscribe(res -> {
                         System.out.println(res.body());
                         if (res.statusCode()==200||"200".equals(res.statusCode())){
-                            ResponseJSON.successJson(routingContext,WalletStatus.CANCELORDER_SUCCESS);
+                            ResponseJSON.successJson(routingContext,WalletStatus.CANCEL_ORDER_SUCCESS);
                         }else if (res.statusCode()==500||"500".equals(res.statusCode())){
-                            ResponseJSON.falseJson(routingContext,WalletStatus.CANCELORDER_FALSE);
+                            ResponseJSON.falseJson(routingContext,WalletStatus.CANCEL_ORDER_FALSE);
                         }
                     }, error -> ResponseJSON.errJson(routingContext));
                 }else {
-                    ResponseJSON.falseJson(routingContext,WalletStatus.CANCELORDER_TIMEFALSE);
+                    ResponseJSON.falseJson(routingContext,WalletStatus.CANCEL_ORDER_TIME_FALSE);
                 }
             });
         });
@@ -269,18 +269,18 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             Pattern pattern = Pattern.compile(regEx);
 
             if ("".equals(amount) || !pattern.matcher(amount).matches() || Double.parseDouble(amount) < 0) {
-                ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTIONCOIN_CHECKTYPE);
+                ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_CHECK_TYPE);
             } else {
                 walletNativeService.transactionCoin(coinType, amount, userAccount, toAccount, message, payPassword).subscribe(result -> {
                     System.out.println(result);
                     if (("success").equals(result)) {
-                        ResponseJSON.successJson(routingContext,WalletStatus.TRANSACTIONCOIN_SUCCESS);
+                        ResponseJSON.successJson(routingContext,WalletStatus.TRANSACTION_COIN_SUCCESS);
                     } else if (("false1").equals(result)) {
-                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTIONCOIN_PASSWORDFALSE);
+                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_PASSWORD_FALSE);
                     } else if (("false2").equals(result)) {
-                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTIONCOIN_AMOUNTFALSE);
+                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_AMOUNT_FALSE);
                     } else {
-                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTIONCOIN_FALSE);
+                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_FALSE);
                     }
                 }, error -> ResponseJSON.errJson(routingContext));
             }

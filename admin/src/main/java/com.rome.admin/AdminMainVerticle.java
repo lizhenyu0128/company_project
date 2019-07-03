@@ -105,7 +105,7 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
                 String token;
                 token = routingContext.request().headers().get("token");
                 if (token == null) {
-                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECKTOKEN);
+                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECK_TOKEN);
                 }
                 commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
@@ -118,11 +118,11 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             adminService.inquireBalance(userAccount).subscribe(result ->{
                 if("false".equals(result)){
-                    ResponseJSON.falseJson(routingContext,AdminStatus.INQUIREBALANCE_FALSE);
+                    ResponseJSON.falseJson(routingContext,AdminStatus.INQUIRE_FALSE);
                 }else if ("false0".equals(result)){
-                    ResponseJSON.falseJson(routingContext, AdminStatus.INQUIREBALANCE_PERMISSION);
+                    ResponseJSON.falseJson(routingContext, AdminStatus.INQUIRE_PERMISSION);
                 }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()),AdminStatus.INQUIREBALANCE_SUCCESS);
+                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()),AdminStatus.INQUIRE_SUCCESS);
                 }
             });
         });
@@ -133,11 +133,11 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             adminService.inquireByUserAccount(userAccount,inquireAccount).subscribe(result ->{
                 if("false".equals(result)){
-                    ResponseJSON.falseJson(routingContext,AdminStatus.INQUIREBYUSERACCOUNT_FALSE);
+                    ResponseJSON.falseJson(routingContext,AdminStatus.INQUIRE_FALSE);
                 }else if ("false0".equals(result)){
-                    ResponseJSON.falseJson(routingContext, AdminStatus.INQUIREBYUSERACCOUNT_PERMISSION);
+                    ResponseJSON.falseJson(routingContext, AdminStatus.INQUIRE_PERMISSION);
                 }else{
-                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()),AdminStatus.INQUIREBYUSERACCOUNT_SUCCESS);
+                    ResponseJSON.successJson(routingContext,JSON.parseArray(result.toString()),AdminStatus.INQUIRE_SUCCESS);
                 }
 
             });
@@ -153,13 +153,13 @@ public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
             String message=  routingContext.getBodyAsJson().getString("message");
             adminService.addTransactionRecord(userAccount,toAccount,fromAccount,amount,coinType,message).subscribe(result ->{
                 if("success".equals(result)){
-                    ResponseJSON.successJson(routingContext, AdminStatus.ADDTRANSACTIONRECORD_SUCCESS);
+                    ResponseJSON.successJson(routingContext, AdminStatus.TRANSACTION_RECORD_SUCCESS);
                 }else if ("false0".equals(result)){
-                    ResponseJSON.falseJson(routingContext, AdminStatus.ADDTRANSACTIONRECORD_FALSE);
+                    ResponseJSON.falseJson(routingContext, AdminStatus.TRANSACTION_RECORD_FALSE);
                 }else if ("false1".equals(result)){
-                    ResponseJSON.falseJson(routingContext,AdminStatus.ADDTRANSACTIONRECORD_AMOUNT);
+                    ResponseJSON.falseJson(routingContext,AdminStatus.TRANSACTION_RECORD_AMOUNT);
                 }else if ("false2".equals(result)){
-                    ResponseJSON.falseJson(routingContext,AdminStatus.ADDTRANSACTIONRECORD_PERMISSION);
+                    ResponseJSON.falseJson(routingContext,AdminStatus.INQUIRE_PERMISSION);
                 }
             },err->ResponseJSON.errJson(routingContext));
         });
