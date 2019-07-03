@@ -20,6 +20,7 @@ import com.rome.wallet.service.WalletNativeServiceImpl;
 import com.rome.wallet.service.WalletService;
 import com.rome.wallet.service.WalletServiceImpl;
 import com.rome.wallet.util.OrderIdUtil;
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.Future;
@@ -229,9 +230,6 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
             String cashId = routingContext.getBodyAsJson().getString("cashId");
             String coinType = routingContext.getBodyAsJson().getString("coinType");
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            System.out.println(coinType);
-            System.out.println(userAccount);
-            System.out.println(cashId);
             walletNativeService.cancelOrder(cashId,coinType,userAccount).subscribe(result ->{
                 if ("success".equals(result)){
                     Date date = new Date();
@@ -279,7 +277,9 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
                         ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_PASSWORD_FALSE);
                     } else if (("false2").equals(result)) {
                         ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_AMOUNT_FALSE);
-                    } else {
+                    } else if ("false0".equals(result)){
+                        ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_ACCOUNT_FALSE);
+                    }else {
                         ResponseJSON.falseJson(routingContext, WalletStatus.TRANSACTION_COIN_FALSE);
                     }
                 }, error -> ResponseJSON.errJson(routingContext));

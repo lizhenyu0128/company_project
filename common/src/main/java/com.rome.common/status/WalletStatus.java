@@ -17,5 +17,6 @@ public class WalletStatus {
     public static final String TRANSACTION_COIN_AMOUNT_FALSE="余额不足";
     public static final String TRANSACTION_COIN_CHECK_TYPE="请输入正数";
     public static final String TRANSACTION_COIN_PASSWORD_FALSE="支付密码错误";
+    public static final String TRANSACTION_COIN_ACCOUNT_FALSE="转账用户不存在";
 
 }

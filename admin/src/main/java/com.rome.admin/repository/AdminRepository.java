@@ -110,9 +110,13 @@ public class AdminRepository {
         JsonArray permission =new JsonArray().add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn->
             conn.rxQueryWithParams("SELECT user_type from basic_account where user_account = ?",permission).flatMap(res->{
+                System.out.println(res.getRows());
                 if (2==res.getRows().get(0).getInteger("user_type")){
                     return conn.rxQueryWithParams("SELECT balance from v_balance_"+coinType+" where user_account = ?",new JsonArray().add(fromAccount)).flatMap(result ->{
-                        if (Double.parseDouble(result.getRows().get(0).getString("balance"))>Double.parseDouble(amount)){
+                        System.out.println(result.getRows().get(0).getString("balance")+"52555");
+                        if (result.getRows().get(0).getString("balance").isEmpty()||"null".equals(result.getRows().get(0).getString("balance"))){
+                            return Single.just("false1");
+                        }else if (Double.parseDouble(result.getRows().get(0).getString("balance"))>Double.parseDouble(amount)){
                             JsonArray addOrder=new JsonArray().
                                 add(OrderIdUtil.getOrderNo(userAccount)).
                                 add(fromAccount).

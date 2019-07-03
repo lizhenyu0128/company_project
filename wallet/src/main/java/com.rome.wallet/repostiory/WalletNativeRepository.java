@@ -59,33 +59,39 @@ public class WalletNativeRepository {
     public Single transactionCoin(String orderId,String coinType, String amount, String userAccount, String toAccount,String message,String payPassword){
         JsonArray selectAmount=new JsonArray().add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient,conn ->
-            conn.rxQueryWithParams("select pay_password,balance from basic_account,v_balance_"+coinType+" where basic_account.user_account = v_balance_"+coinType+".user_account  and basic_account.user_account=?", selectAmount)
-                .flatMap(res -> {
-                    System.out.println(res.getRows());
-                    if ((res.getRows()).isEmpty()){
-                        System.out.println(222);
-                        return Single.just("false");
-                    }else if (!BCrypt.checkpw(payPassword, res.getRows().get(0).getString("pay_password"))){
-                        return Single.just("false1");
-                    }else if (Double.parseDouble(res.getRows().get(0).getString("balance"))<Double.parseDouble(amount)){
-                        return Single.just("false2");
-                    } else {
-                       JsonArray transactionCoin = new JsonArray().
-                            add(orderId).
-                            add(userAccount).
-                            add(toAccount).
-                            add(amount).
-                            add(message);
-                        return conn.rxUpdateWithParams("INSERT INTO wallet_native_"+coinType+"(order_id,user_account,to_account,amount,order_time,message)  VALUES(?,?,?,?,floor(extract(epoch from now())),?)",transactionCoin).flatMap(result ->{
-                            System.out.println(result.getUpdated());
-                            if (result.getUpdated()>0){
-                                return Single.just("success");
-                            }else{
-                                return Single.error(new Exception("err"));
+            conn.rxQueryWithParams("select user_password from basic_account where user_account=?",new JsonArray().add(toAccount)).flatMap(resultSet->{
+                if (resultSet.getRows().isEmpty()){
+                    return Single.just("false0");
+                }else {
+                    return conn.rxQueryWithParams("select pay_password,balance from basic_account,v_balance_"+coinType+" where basic_account.user_account = v_balance_"+coinType+".user_account  and basic_account.user_account=?", selectAmount)
+                        .flatMap(res -> {
+                            System.out.println(res.getRows());
+                            if ((res.getRows()).isEmpty()){
+                                System.out.println(222);
+                                return Single.just("false");
+                            }else if (!BCrypt.checkpw(payPassword, res.getRows().get(0).getString("pay_password"))){
+                                return Single.just("false1");
+                            }else if (Double.parseDouble(res.getRows().get(0).getString("balance"))<Double.parseDouble(amount)||"null".equals(res.getRows().get(0).getString("balance"))){
+                                return Single.just("false2");
+                            } else {
+                                JsonArray transactionCoin = new JsonArray().
+                                    add(orderId).
+                                    add(userAccount).
+                                    add(toAccount).
+                                    add(amount).
+                                    add(message);
+                                return conn.rxUpdateWithParams("INSERT INTO wallet_native_"+coinType+"(order_id,user_account,to_account,amount,order_time,message)  VALUES(?,?,?,?,floor(extract(epoch from now())),?)",transactionCoin).flatMap(result ->{
+                                    System.out.println(result.getUpdated());
+                                    if (result.getUpdated()>0){
+                                        return Single.just("success");
+                                    }else{
+                                        return Single.error(new Exception("err"));
+                                    }
+                                });
                             }
                         });
-                    }
-                })
+                }
+            })
         );
     }
 
