@@ -1,4 +1,4 @@
-package com.rome.guild;
+package com.rome.grading;
 
 import com.rome.common.config.InitConfig;
 import com.rome.common.config.ProfitConfig;
@@ -8,9 +8,9 @@ import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.status.CommonStatus;
 import com.rome.common.util.ResponseJSON;
-import com.rome.guild.repository.GuildRepository;
-import com.rome.guild.service.GuidServiceImpl;
-import com.rome.guild.service.GuildService;
+import com.rome.grading.repository.GradingRepository;
+import com.rome.grading.service.GradingService;
+import com.rome.grading.service.GradingServiceImpl;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
@@ -31,17 +31,17 @@ import java.io.File;
 /**
  * @author asus
  */
-public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle {
+public class GradingMainVerticle extends io.vertx.reactivex.core.AbstractVerticle{
 
-    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\guild\\src\\resources" + File.separator + "config-dev.json";
-    private final static Logger logger = LoggerFactory.getLogger(GuildMainVerticle.class);
+    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\grading\\src\\resources" + File.separator + "config-dev.json";
+    private final static Logger logger = LoggerFactory.getLogger(GradingMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
     private RedisClient redisClient;
     private ServiceDiscovery discovery;
-    private CommonService commonService;
     private WebClient webClient;
-    private GuildService guildService;
+    private CommonService commonService;
+    private GradingService gradingService;
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -68,9 +68,7 @@ public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
 
             consulInit(config().getJsonObject("ConsulConfig")).subscribe(() -> {
                 // 配置传递
-                guildService = new GuidServiceImpl(new GuildRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
-                commonService = new CommonServiceImpl(new ProfitConfig(postgreSQLClient, vertx), vertx);
-                commonService.selectProfit(vertx, this, CONFIG_PATH).subscribe();
+                gradingService = new GradingServiceImpl(new GradingRepository(postgreSQLClient, vertx, mailClient, redisClient, webClient), vertx);
                 routerController();
             });
             //运行
@@ -84,12 +82,14 @@ public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
         JsonObject wallet01 = discovery.rxGetRecord(new JsonObject().put("name", "wallet01")).blockingGet().getMetadata();
         JsonObject admin01 = discovery.rxGetRecord(new JsonObject().put("name", "admin01")).blockingGet().getMetadata();
         JsonObject guild01 = discovery.rxGetRecord(new JsonObject().put("name", "guild01")).blockingGet().getMetadata();
+        JsonObject grading01 = discovery.rxGetRecord(new JsonObject().put("name", "grading01")).blockingGet().getMetadata();
         this.config().getJsonObject("ConsulServer").put(uaa01.getString("ServiceName"), uaa01);
         this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
         this.config().getJsonObject("ConsulServer").put(wallet01.getString("ServiceName"), wallet01);
         this.config().getJsonObject("ConsulServer").put(admin01.getString("ServiceName"), admin01);
         this.config().getJsonObject("ConsulServer").put(guild01.getString("ServiceName"), guild01);
-        Integer port = guild01.getInteger("ServicePort");
+        this.config().getJsonObject("ConsulServer").put(grading01.getString("ServiceName"), grading01);
+        Integer port = grading01.getInteger("ServicePort");
         // Create a router object.
         Router router = Router.router(vertx);
         vertx
@@ -99,7 +99,7 @@ public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
 
         // 增加一个处理器，将请求的上下文信息，放到RoutingContext中
         router.route().handler(BodyHandler.create());
-        router.route("/api/guild/*")
+        router.route("/api/grading/*")
             .handler(routingContext -> {
                 String token;
                 token = routingContext.request().headers().get("token");
@@ -113,7 +113,7 @@ public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle
             });
 
 
-        router.get("/api/sss").handler(routingContext -> {
+        router.get("/api/test").handler(routingContext -> {
             ResponseJSON.successJson(routingContext,"11111");
         });
 
