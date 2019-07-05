@@ -93,6 +93,8 @@ public class AccountRepository {
                                 return conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)", memberRelation).flatMap(rest -> {
                                     if (rest.getUpdated() > 0) {
                                         return Single.just("success");
+
+
                                     }
                                     return Single.just("false");
                                 });
