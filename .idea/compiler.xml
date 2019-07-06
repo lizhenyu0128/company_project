@@ -6,10 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="uaa" />
-        <module name="common" />
-        <module name="wallet" />
         <module name="message" />
+        <module name="common" />
+        <module name="grading" />
+        <module name="uaa" />
+        <module name="guild" />
+        <module name="wallet" />
+        <module name="basic" />
         <module name="admin" />
       </profile>
     </annotationProcessing>

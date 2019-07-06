@@ -13,6 +13,9 @@
         <module>uaa</module>
         <module>message</module>
         <module>admin</module>
+        <module>guild</module>
+        <module>grading</module>
+        <module>basic</module>
     </modules>
 
     <properties>

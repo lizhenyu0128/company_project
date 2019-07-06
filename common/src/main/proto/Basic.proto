@@ -1,0 +1,20 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package com.rome.common.rpc.basic;
+message  FileUploadReq {
+    string imageByte = 1;
+    string userAccount = 2;
+}
+
+message FileUploadRes {
+
+    string resultJson =1;
+
+}
+
+service FileUploadService {
+
+    rpc fileUpload(FileUploadReq ) returns (FileUploadRes);
+}
+
+
