@@ -16,5 +16,16 @@
         <module name="admin" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="admin" target="1.8" />
+      <module name="basic" target="1.8" />
+      <module name="common" target="1.8" />
+      <module name="grading" target="1.8" />
+      <module name="guild" target="1.8" />
+      <module name="message" target="1.8" />
+      <module name="rome-backend" target="1.8" />
+      <module name="uaa" target="1.8" />
+      <module name="wallet" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
