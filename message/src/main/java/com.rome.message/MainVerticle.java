@@ -13,8 +13,6 @@ import com.rome.message.service.MessageServiceImpl;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.jdbc.JDBCClient;
-import io.vertx.ext.sql.SQLClient;
 import io.vertx.grpc.*;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;

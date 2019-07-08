@@ -1,6 +1,5 @@
 package com.rome.common.config;
 
-import com.sun.deploy.config.Config;
 import io.reactivex.Single;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Verticle;

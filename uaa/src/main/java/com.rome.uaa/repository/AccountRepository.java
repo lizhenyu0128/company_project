@@ -1,6 +1,5 @@
 package com.rome.uaa.repository;
 
-
 import com.rome.common.status.UaaStatus;
 import com.rome.common.util.BouncyCastleCrypto;
 import com.rome.uaa.entity.UserSingIn;
@@ -84,7 +83,7 @@ public class AccountRepository {
                             }
                         } else {
                             memberRelation.add(singUpParam.getString(0)).
-                                add(result.getRows().get(0).getInteger("level")).
+                                add(result.getRows().get(0).getInteger("level")+1).
                                 add(result.getRows().get(0).getString("uid")).
                                 add(code);
                         }
@@ -93,8 +92,6 @@ public class AccountRepository {
                                 return conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)", memberRelation).flatMap(rest -> {
                                     if (rest.getUpdated() > 0) {
                                         return Single.just("success");
-
-
                                     }
                                     return Single.just("false");
                                 });
@@ -374,26 +371,18 @@ public class AccountRepository {
      */
     public Single setHeadImage(String userAccount, String headImage) {
         System.out.println(1111);
+        JsonArray setHeadImage = new JsonArray().
+            add(headImage).
+            add(userAccount);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxQueryWithParams("SELECT head_image FROM basic_account WHERE user_account= ?", new JsonArray().add(userAccount)).flatMap(res -> {
-                String headUrl = res.getRows().get(0).getString("head_image");
-                String path = "E:\\company\\image\\headImage\\" + userAccount + "." + (headImage.substring((headImage.lastIndexOf(".") + 1), headImage.length()));
-                System.out.println(res.getRows().get(0).getString("head_image"));
-               if (!res.getRows().get(0).getString("head_image").isEmpty()||"null".equals(res.getRows().get(0).getString("head_image"))) {
-                    vertx.fileSystem().rxDelete(headUrl).subscribe();
-                }
-                JsonArray setHeadImage = new JsonArray().
-                    add(path).
-                    add(userAccount);
-                return vertx.fileSystem().rxCopy(headImage, path).andThen(
-                    conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ", setHeadImage).flatMap(result -> {
+              conn.rxUpdateWithParams("UPDATE basic_account SET head_image=? where user_account=? ", setHeadImage).flatMap(result -> {
                         if (result.getUpdated() > 0) {
                             return Single.just("success");
                         }
                         return Single.just("false");
                     }));
-            }));
-    }
+            }
+
 
     public Single getMnemonics(String userAccount) {
         Dictionary dictionary = EnglishDictionary.instance();

@@ -73,10 +73,14 @@ public class BasicMainVerticle extends io.vertx.reactivex.core.AbstractVerticle{
             @Override
             public void fileUpload(FileUploadReq request, Future<FileUploadRes> response) {
                 System.out.println(11111);
-                System.out.println(response.result());
                 basicService.setFile(request.getImageByte(),request.getUserAccount())
-                    .subscribe(res -> response.complete(FileUploadRes.newBuilder().setResultJson(response.toString()).build()),
-                        err -> response.complete(FileUploadRes.newBuilder().setResultJson("false").build()));
+                    .subscribe(res ->{
+                        if ("false".equals(res.toString())){
+                            response.complete(FileUploadRes.newBuilder().setResultJson("false").build());
+                        }else{
+                            System.out.println(res);
+                            response.complete(FileUploadRes.newBuilder().setResultJson(res.toString()).build());
+                        } });
             }
         };
 

@@ -8,6 +8,8 @@ import com.rome.common.config.RpcConfig;
 import com.rome.common.constant.UaaConsts;
 import com.rome.common.dbutil.PostgresqlPool;
 import com.rome.common.entity.Token;
+import com.rome.common.rpc.basic.FileUploadReq;
+import com.rome.common.rpc.basic.FileUploadServiceGrpc;
 import com.rome.common.rpc.message.VerificationCodeReq;
 import com.rome.common.rpc.message.VerificationCodeServiceGrpc;
 import com.rome.common.config.SMTPConfig;
@@ -33,7 +35,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
+import io.vertx.reactivex.ext.web.FileUpload;
 import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.ext.web.handler.*;
@@ -43,11 +47,13 @@ import io.vertx.reactivex.servicediscovery.spi.ServiceImporter;
 import io.vertx.servicediscovery.consul.ConsulServiceImporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.BASE64Encoder;
 
-import java.io.File;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * @author Trump
@@ -100,11 +106,14 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         //获取某个服务
         JsonObject uaa01 = discovery.rxGetRecord(new JsonObject().put("name", "uaa01")).blockingGet().getMetadata();
         JsonObject message01 = discovery.rxGetRecord(new JsonObject().put("name", "message01")).blockingGet().getMetadata();
+        JsonObject basic01 = discovery.rxGetRecord(new JsonObject().put("name", "basic01")).blockingGet().getMetadata();
         this.config().getJsonObject("ConsulServer").put(uaa01.getString("ServiceName"), uaa01);
         this.config().getJsonObject("ConsulServer").put(message01.getString("ServiceName"), message01);
         Integer port = uaa01.getInteger("ServicePort");
         //message channel
         ManagedChannel messageChannel = RpcConfig.startRpcClient(vertx, message01.getString("ServiceAddress"), message01.getInteger("ServicePort"));
+        //basic channel
+        ManagedChannel basicChannel = RpcConfig.startRpcClient(vertx, basic01.getString("ServiceAddress"), basic01.getInteger("ServicePort"));
         // Create a router object.
         Router router = Router.router(vertx);
         vertx
@@ -248,6 +257,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         //update nickName
         router.put("/api/user/updateNickName").handler(routingContext -> {
+            System.out.println(666);
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String nickName = routingContext.getBodyAsJson().getString("nickName");
             uaaService.updateNickName(userAccount, nickName).subscribe(result -> {
@@ -261,15 +271,57 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         //set head image
         router.put("/api/user/setHeadImage").handler(routingContext -> {
+            System.out.println(666);
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\4444.png";
-            uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
-                if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext, UaaStatus.SET_SUCCESS);
+            String imageByte=routingContext.getBodyAsJson().getString("imageByte");
+            System.out.println(imageByte+userAccount);
+            Set<FileUpload> uploads = routingContext.fileUploads();
+
+         /*   //将图片文件转化为字节数组字符串，并对其进行Base64编码处理
+            InputStream in = null;
+            byte[] data = null;
+            //读取图片字节数组
+            try
+            {
+                in = new FileInputStream(imgFile);
+                data = new byte[in.available()];
+                in.read(data);
+                in.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            //对字节数组Base64编码
+            BASE64Encoder encoder = new BASE64Encoder();
+            return encoder.encode(data);//返回Base64编码过的字节数组字符串  */
+
+
+
+
+
+            FileUploadServiceGrpc.FileUploadServiceVertxStub stub=FileUploadServiceGrpc.newVertxStub(basicChannel);
+            FileUploadReq request=FileUploadReq.newBuilder()
+                .setImageByte(imageByte)
+                .setUserAccount(userAccount)
+                .build();
+            stub.fileUpload(request,ar->{
+                if ("false".equals(ar.result().getResultJson())) {
+                    ResponseJSON.falseJson(routingContext,UaaStatus.SET_FALSE);
                 } else {
-                    ResponseJSON.falseJson(routingContext, UaaStatus.SET_FALSE);
+                    System.out.println(ar);
+                    System.out.println(ar.succeeded());
+                    String headImage=ar.result().getResultJson();
+                    System.out.println(headImage);
+                    uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
+                        if ("success".equals(result)) {
+                            ResponseJSON.successJson(routingContext, UaaStatus.SET_SUCCESS);
+                        } else {
+                            ResponseJSON.falseJson(routingContext, UaaStatus.SET_FALSE);
+                        }
+                    }, error -> ResponseJSON.errJson(routingContext));
                 }
-            }, error -> ResponseJSON.errJson(routingContext));
+            });
 
         });
 
