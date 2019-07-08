@@ -1,6 +1,5 @@
 package com.rome.uaa;
 
-
 import com.alibaba.fastjson.JSON;
 import com.rome.common.config.InitConfig;
 import com.rome.common.config.ProfitConfig;
@@ -15,6 +14,7 @@ import com.rome.common.service.CommonService;
 import com.rome.common.service.CommonServiceImpl;
 import com.rome.common.status.CommonStatus;
 import com.rome.common.status.UaaStatus;
+import com.rome.common.util.IpAddress;
 import com.rome.common.util.ResponseJSON;
 import com.rome.uaa.util.ValidatorUtil;
 import com.rome.uaa.entity.UserSignUp;
@@ -48,14 +48,15 @@ import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * @author Trump
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
-        private final static String CONFIG_PATH = "E:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
-//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    //        private final static String CONFIG_PATH = "E:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -64,6 +65,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private CommonService commonService;
     private ServiceDiscovery discovery;
     private WebClient webClient;
+    private static Pattern pattern = Pattern.compile("\\d{6}");
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -114,28 +116,34 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
         // 增加一个处理器，将请求的上下文信息，放到RoutingContext中
         router.route().handler(BodyHandler.create());
-        router.route("/api/user/*")
+
+        router.route("/*").failureHandler(frc -> ResponseJSON.falseJson(frc, "false"));
+        router.route("/user/*")
             .handler(routingContext -> {
                 String token;
                 token = routingContext.request().headers().get("token");
                 if (token == null) {
-                    ResponseJSON.falseJson(routingContext,CommonStatus.CHECK_TOKEN);
+                    ResponseJSON.falseJson(routingContext, CommonStatus.CHECK_TOKEN);
                 }
                 commonService.checkIdentity(token).subscribe(res -> {
                     routingContext.put("token", res.toString());
                     routingContext.next();
                 }, err -> ResponseJSON.errJson(routingContext));
-            }).failureHandler(frc -> ResponseJSON.falseJson(frc, "false"));
+            });
+        Router mainRouter = Router.router(vertx);
+
+        router.mountSubRouter("/v1/uaa", router);
 
         // user sign up
-        router.put("/api/signUp").handler(routingContext -> {
+        router.put("/publish/signUp").handler(routingContext -> {
             //转成实体类
             UserSignUp userSignUp = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSignUp.class);
             //判断实体类
             ValidatorUtil.checkEntity(userSignUp);
-            String invitationCode = routingContext.getBodyAsJson().getString("invitationCode");
-
-            uaaService.userSignUp(userSignUp, invitationCode).subscribe(result -> {
+            userSignUp.setCreateIp(IpAddress.getIpAddress(routingContext));
+            userSignUp.setUsingIp(IpAddress.getIpAddress(routingContext));
+            System.out.println(userSignUp);
+            uaaService.userSignUp(userSignUp, userSignUp.getInvitationCode()).subscribe(result -> {
                 if ("success".equals(result)) {
                     Date date = new Date();
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
@@ -145,32 +153,33 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                         .rxSendJsonObject(new JsonObject().put("userID", userSignUp.getUserAccount()));
                     req.subscribe(res -> {
                         if (res.bodyAsJsonObject().getJsonObject("addresses").isEmpty()) {
-                            ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_FALSE);
+                            ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_UP_FALSE);
                         } else {
                             ResponseJSON.successJson(routingContext, res.bodyAsJsonObject(), UaaStatus.SIGN_UP_SUCCESS);
                         }
 
                     }, error -> ResponseJSON.errJson(routingContext));
                 } else if ("false".equals(result)) {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_FALSE);
+                    ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_UP_FALSE);
                 } else {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.SIGN_UP_RESIGN);
+                    ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_UP_RESIGN);
                 }
-            });
+            }, err -> ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_UP_FALSE));
         });
 
         // user sign in
-        router.post("/api/login").handler(routingContext -> {
+        router.post("/login").handler(routingContext -> {
             //转成实体类
             UserSingIn userSingIn = JSON.parseObject(routingContext.getBodyAsJson().toString(), UserSingIn.class);
-            String userType = routingContext.getBodyAsJson().getString("userType");
             System.out.println(userSingIn);
-            uaaService.userLogin(userSingIn, userType).subscribe(result -> ResponseJSON.successJson(routingContext, new JsonObject().put("token", result),UaaStatus.SIGN_IN_SUCCESS)
+            ValidatorUtil.checkEntity(userSingIn);
+            userSingIn.setUsingIp(IpAddress.getIpAddress(routingContext));
+            uaaService.userLogin(userSingIn).subscribe(result -> ResponseJSON.successJson(routingContext, new JsonObject().put("token", result), UaaStatus.SIGN_IN_SUCCESS)
                 , error -> ResponseJSON.falseJson(routingContext, UaaStatus.SIGN_IN_FALSE));
         });
 
         // send SMS or mail
-        router.get("/api/verifiedCode/messageType/:messageType/useType/:useType/content/:content").handler(routingContext -> {
+        router.get("/verifiedCode/messageType/:messageType/useType/:useType/content/:content").handler(routingContext -> {
             String messageType = routingContext.request().getParam("messageType");
             String useType = routingContext.request().getParam("useType");
             String content = routingContext.request().getParam("content");
@@ -185,74 +194,55 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
                     .build();
                 stub.getVerificationCode(request, ar -> {
                     if (ar.succeeded()) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.SEND_MSG_SUCCESS);
+                        ResponseJSON.successJson(routingContext, UaaStatus.SEND_MSG_SUCCESS);
                     } else {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SEND_MSG_FALSE);
+                        ResponseJSON.falseJson(routingContext, UaaStatus.SEND_MSG_FALSE);
                     }
                 });
             }
         });
 
         //    reset password
-        router.put("/api/user/resetPassword").handler(routingContext -> {
+        router.put("/user/resetPassword").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String newPassword = routingContext.getBodyAsJson().getString("newPassword");
             String code = routingContext.getBodyAsJson().getString("code");
             String phone = routingContext.getBodyAsJson().getString("phone");
             uaaService.resetPassword(userAccount, newPassword, code, phone).subscribe(result -> {
-                    if ((Boolean) result) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
-                    } else {
-                        ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_FALSE);
-                    }
-                },error -> ResponseJSON.errJson(routingContext));
-        });
-
-        // set payPassword
-        router.put("/api/user/setPayPassword").handler(routingContext -> {
-
-            String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
-            String userPassword = routingContext.getBodyAsJson().getString("userPassword");
-            String payPassword = routingContext.getBodyAsJson().getString("payPassword");
-
-            if ("".equals(payPassword) || null == payPassword) {
-                ResponseJSON.successJson(routingContext,UaaStatus.FORMAT);
-            } else {
-                uaaService.setPayPassword(userAccount, payPassword, userPassword).subscribe(result -> {
-                    if ("success".equals(result)) {
-                        ResponseJSON.successJson(routingContext,UaaStatus.SET_SUCCESS);
-                    } else if ("false".equals(result)) {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SET_PAY_PASSWORD_PASSWORD_ERROR);
-                    } else {
-                        ResponseJSON.falseJson(routingContext,UaaStatus.SET_PAY_PASSWORD_PAY_PASSWORD_RESET);
-                    }
-                }, error -> ResponseJSON.errJson(routingContext));
-            }
+                if ((Boolean) result) {
+                    ResponseJSON.successJson(routingContext, UaaStatus.UPDATE_SUCCESS);
+                } else {
+                    ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_FALSE);
+                }
+            }, error -> ResponseJSON.errJson(routingContext));
         });
 
         // update payPassword
-        router.put("/api/user/updatePayPassword").handler(routingContext -> {
-            System.out.println(22);
+        router.put("/user/updatePayPassword").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String payPassword = routingContext.getBodyAsJson().getString("payPassword");
             String newPayPassword = routingContext.getBodyAsJson().getString("newPayPassword");
-
+            if(!pattern.matcher(newPayPassword).matches()||!pattern.matcher(payPassword).matches()){
+                System.out.println("哈哈哈哈");
+                ResponseJSON.falseJson(routingContext, CommonStatus.FALSE);
+                return;
+            }
             uaaService.updatePayPassword(userAccount, payPassword, newPayPassword).subscribe(result -> {
                 if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
+                    ResponseJSON.successJson(routingContext, UaaStatus.UPDATE_SUCCESS);
                 } else {
-                    ResponseJSON.falseJson(routingContext,UaaStatus.UPDATE_PAY_PASSWORD_FALSE);
+                    ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_PAY_PASSWORD_FALSE);
                 }
             }, error -> ResponseJSON.errJson(routingContext));
         });
 
         //update nickName
-        router.put("/api/user/updateNickName").handler(routingContext -> {
+        router.put("/user/updateNickName").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String nickName = routingContext.getBodyAsJson().getString("nickName");
             uaaService.updateNickName(userAccount, nickName).subscribe(result -> {
                 if ("success".equals(result)) {
-                    ResponseJSON.successJson(routingContext,UaaStatus.UPDATE_SUCCESS);
+                    ResponseJSON.successJson(routingContext, UaaStatus.UPDATE_SUCCESS);
                 } else {
                     ResponseJSON.falseJson(routingContext, UaaStatus.UPDATE_FALSE);
                 }
@@ -260,7 +250,7 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
         //set head image
-        router.put("/api/user/setHeadImage").handler(routingContext -> {
+        router.put("/user/setHeadImage").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             String headImage = "C:\\Users\\asus\\Pictures\\Saved Pictures\\666.jpg";
             uaaService.setHeadImage(userAccount, headImage).subscribe(result -> {
@@ -274,15 +264,15 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
         });
 
         //获取一个助记词
-        router.get("/api/user/getMnemonics").handler(routingContext -> {
+        router.get("/user/getMnemonics").handler(routingContext -> {
             String userAccount = JSON.parseObject(routingContext.get("token"), Token.class).getUser_account();
             uaaService.getMnemonics(userAccount).subscribe(res -> {
-                ResponseJSON.successJson(routingContext, res,UaaStatus.GET_SUCCESS);
+                ResponseJSON.successJson(routingContext, res, UaaStatus.GET_SUCCESS);
             }, err -> ResponseJSON.falseJson(routingContext, UaaStatus.GET_FALSE));
         });
 
         //获取一个私钥
-        router.get("/api/user/getPrivateKey").handler(routingContext -> {
+        router.get("/user/getPrivateKey").handler(routingContext -> {
             System.out.println("asd");
             String mnemonics = routingContext.getBodyAsJson().getString("mnemonics");
             if (mnemonics == null) {
@@ -295,6 +285,8 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
             String privateKey = rootPrivateKey.getPrivateKey();
             ResponseJSON.successJson(routingContext, privateKey, UaaStatus.GET_SUCCESS);
         });
+        //助记词登陆
+//        router.put("")
 
         //2. 由助记词得到种子
 //            byte[] seed = new SeedCalculator().calculateSeed(mnemonics, "");

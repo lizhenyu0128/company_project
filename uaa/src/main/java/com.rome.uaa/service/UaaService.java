@@ -29,10 +29,9 @@ public interface UaaService {
     /**
      * user login
      * @param userSingIn
-     * @param userType
      * @return Single
      */
-    Single userLogin(UserSingIn userSingIn,String userType);
+    Single userLogin(UserSingIn userSingIn);
 
     /**
      * reset password
@@ -44,17 +43,6 @@ public interface UaaService {
      * @Author: sunYang
      */
     Single resetPassword(String userAccount,String newPassword,String code,String content);
-
-
-    /**
-     * set payPassword
-     * @param userAccount
-     * @param payPassword
-     * @param userPassword
-     * @return Single
-     * @Author: sunYang
-     */
-    Single setPayPassword(String userAccount,String payPassword,String userPassword);
 
     /**
      * set payPassword

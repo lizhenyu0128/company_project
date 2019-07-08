@@ -21,7 +21,6 @@ import io.vertx.reactivex.ext.mail.MailClient;
 import io.vertx.reactivex.ext.sql.SQLClientHelper;
 import io.vertx.reactivex.ext.web.client.WebClient;
 import io.vertx.reactivex.redis.RedisClient;
-import org.apache.commons.codec.binary.Hex;
 import org.mindrot.jbcrypt.BCrypt;
 import org.nightcode.bip39.Bip39;
 import org.nightcode.bip39.EntropyDesc;
@@ -70,35 +69,40 @@ public class AccountRepository {
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
             conn.rxQueryWithParams("SELECT user_password from basic_account where user_account=?", new JsonArray().add(singUpParam.getString(0))).flatMap(resultSet -> {
                 if (!resultSet.getRows().isEmpty()) {
-                    return Single.just("false0");
+                    return Single.just("false");
                 } else {
                     return conn.rxQueryWithParams("SELECT uid,level FROM member_relation WHERE invitation_code = ?", new JsonArray().add(invitationCode)).flatMap(result -> {
-                        if (result.getRows().isEmpty()) {
-                            if ("".equals(invitationCode)) {
-                                memberRelation.add(singUpParam.getString(0)).
-                                    add(0).
-                                    add(0).
-                                    add(code);
-                            } else {
-                                return Single.just("false");
-                            }
-                        } else {
+                        System.out.println("萨达萨达撒撒的撒");
+                        System.out.println(result.getRows());
+                        if (result.getRows().isEmpty() && invitationCode != null) {
+                            return Single.just("false");
+                        } else if (invitationCode == null) {
                             memberRelation.add(singUpParam.getString(0)).
-                                add(result.getRows().get(0).getInteger("level")).
+                                add(0).
+                                add(0).
+                                add(code);
+                        } else if (!result.getRows().isEmpty()) {
+                            memberRelation.add(singUpParam.getString(0)).
+                                add(result.getRows().get(0).getInteger("level") + 1).
                                 add(result.getRows().get(0).getString("uid")).
                                 add(code);
                         }
-                        return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,user_type) VALUES (?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,1)", singUpParam).flatMap(reu -> {
-                            if (reu.getUpdated() > 0) {
-                                return conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)", memberRelation).flatMap(rest -> {
-                                    if (rest.getUpdated() > 0) {
-                                        return Single.just("success");
-                                    }
-                                    return Single.just("false");
-                                });
-                            }
-                            return Single.just("false");
-                        });
+                        System.out.println(singUpParam);
+                        return conn.rxUpdateWithParams("INSERT INTO basic_account (user_account,user_password,pay_password,user_mail,user_phone,create_ip,using_ip,last_login_time,create_time,use_status,nick_name,longitude,latitude,label) VALUES (?,?,?,?,?,?,?, floor(extract(epoch from now())), floor(extract(epoch from now())),1,?,?,?,?)", singUpParam)
+                            .flatMap(reu -> {
+                                if (reu.getUpdated() > 0) {
+                                    return conn.rxUpdateWithParams("INSERT INTO member_relation (uid,level,puid,invitation_code) VALUES (?,?,?,?)", memberRelation).flatMap(rest -> {
+                                        if (rest.getUpdated() > 0) {
+                                            return Single.just("success");
+                                        }
+                                        return Single.just("false");
+                                    });
+                                }
+                                return Single.just("false");
+                            })
+                            .doOnError(err -> {
+                                throw new Error(err.getMessage());
+                            });
                     });
                 }
             })
@@ -109,22 +113,20 @@ public class AccountRepository {
      * login_type phone mail basic
      *
      * @param u
-     * @param userType
      * @return
      * @description login_type phone mail basic
      */
-    public Single userLogin(UserSingIn u, String userType) {
-        if (!"basic".equals(u.getLoginType())) {
-            return userLoginByCode(u, userType);
+    public Single userLogin(UserSingIn u) {
+        if (u.getVerificationCode() != null) {
+            return userLoginByCode(u);
         }
         JsonArray loginParam = new JsonArray();
-        loginParam.add(u.getUserAccount())
-            .add(Integer.parseInt(userType));
+        loginParam.add(u.getUserAccount());
         System.out.println(loginParam);
         return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> conn.rxQueryWithParams(
-            "SELECT a.user_account,a.use_status,a.user_mail,a.user_phone,a.user_password,b.identity_id FROM " +
-                "basic_account a LEFT JOIN \"identity\" b ON a.user_type=b.identity_id WHERE " +
-                "user_account=? AND user_type= ?", loginParam)
+            "SELECT user_account,use_status,user_mail,user_phone,user_password FROM " +
+                "basic_account WHERE " +
+                "user_account=?", loginParam)
             .flatMap(res -> {
                 if (res.getRows().isEmpty()) {
                     return Single.error(new Exception(UaaStatus.SIGN_IN_USER));
@@ -148,7 +150,6 @@ public class AccountRepository {
                                     .put("user_account", loginView.getValue("user_account"))
                                     //自 定义参数
                                     .put("identity_id", loginView.getValue("identity_id"));
-                                System.out.println(jwtParam + "库卡技术");
                                 return sendToken(jwtParam);
 
                             }
@@ -184,69 +185,69 @@ public class AccountRepository {
         return Single.just(token);
     }
 
-    /**
-     * @param u
-     * @param userType
-     * @return
-     * @description login_type phone mail basic
-     */
-    private Single userLoginByCode(UserSingIn u, String userType) {
+
+    private Single userLoginByCode(UserSingIn u) {
+        System.out.println("走了code");
         //查缓存
         String code = u.getVerificationCode();
-        String loginType = u.getLoginType();
+        // 0 代表用手机号码登陆，1 代表邮件登陆
+        String loginType = "phone";
+        if (u.getUserMail() != null) {
+            loginType = "mail";
+        }
         String phoneOrMail = "mail".equals(loginType) ? u.getUserMail() : u.getUserPhone();
-        System.out.println("使用" + u.getLoginType() + "登陆");
         System.out.println(phoneOrMail + loginType);
         return redisClient.rxGet(phoneOrMail + "login").filter((resData) -> {
             if (resData.equals(code)) {
                 redisClient.rxDel(phoneOrMail + "login").subscribe();
-                System.out.println("哈哈哈哈哈");
                 return true;
             } else {
                 throw new Error(UaaStatus.SIGN_IN_CODE_ERROR);
             }
         }).flatMapSingle(resData -> SQLClientHelper.inTransactionSingle(postgreSQLClient, conn -> {
-            System.out.println("萨达萨达");
             JsonArray loginParam = new JsonArray()
                 .add(u.getUsingIp())
                 .add(u.getLongitude())
                 .add(u.getLatitude())
                 .add(phoneOrMail)
-                .add(phoneOrMail)
-                .add(Integer.parseInt(userType));
+                .add(phoneOrMail);
             System.out.println(loginParam);
             return conn.rxUpdateWithParams("UPDATE basic_account SET using_ip=?,last_login_time=" +
                 "floor(extract(epoch from now())),longitude=?,latitude=? WHERE user_phone=? or user_mail=?", loginParam)
-                .filter((updateResult) -> updateResult.getUpdated() > 0)
+                .filter((updateResult) -> {
+                    return true;
+                })
                 .flatMapSingle(updateResult ->
-                    conn.rxQueryWithParams("SELECT user_account,b.identity_id FROM " +
-                            "basic_account a LEFT JOIN \"identity\" b ON a.user_type = b.identity_id WHERE " +
-                            "a.user_phone = ? or a.user_mail = ?  AND user_type= ? ",
+                    conn.rxQueryWithParams("SELECT user_account FROM " +
+                            "basic_account  WHERE " +
+                            "user_phone = ? or user_mail = ? ",
                         new JsonArray().add(phoneOrMail).add(phoneOrMail))
                         .flatMap(queryRes -> {
                             JsonObject jwtObj = queryRes.getRows().get(0);
-                            System.out.println(jwtObj + "哈哈哈");
                             return sendToken(jwtObj);
                         }));
         }));
     }
 
     /**
-     * @param newPassword
      * @param userAccount
-     * @return Single
-     * @description reset password
-     * @Author: sunYang
+     * @param newPassword
+     * @param code
+     * @param content
+     * @return
+     * @Author Trump
      */
     public Single resetPassword(String userAccount, String newPassword, String code, String content) {
         System.out.println(content + "resetPassword");
         System.out.println(content + userAccount);
         String encryptPassWord = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        System.out.println("哈哈哈哈哈");
         JsonArray resetPassword = new JsonArray().
             add(encryptPassWord).
             add(userAccount);
         return redisClient.rxGet(content + "resetPassword").flatMapSingle(resData -> {
             if (resData.equals(code)) {
+                System.out.println("adadasd");
                 redisClient.rxDel(content + "resetPassword").subscribe();
                 return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
                     conn.rxUpdateWithParams("UPDATE basic_account SET user_password=? WHERE user_account=?", resetPassword)
@@ -262,43 +263,6 @@ public class AccountRepository {
                 return Single.just(false);
             }
         });
-    }
-
-    /**
-     * @param userAccount
-     * @param payPassword
-     * @param userPassword
-     * @return Single
-     * @description set payPassword
-     * @Author: sunYang
-     */
-    public Single setPayPassword(String userAccount, String payPassword, String userPassword) {
-        JsonArray queryPaymentPassword = new JsonArray().
-            add(userAccount);
-        return SQLClientHelper.inTransactionSingle(postgreSQLClient, conn ->
-            conn.rxQuerySingleWithParams("SELECT user_password ,pay_password FROM basic_account WHERE" +
-                " user_account = ? ", queryPaymentPassword).flatMapSingle(res -> {
-                if (("").equals(res.getString(1)) || (res.getString(1)) == null) {
-                    if (BCrypt.checkpw(userPassword, res.getString(0))) {
-                        JsonArray setPayPassword = new JsonArray().
-                            add(BCrypt.hashpw(payPassword, BCrypt.gensalt())).
-                            add(userAccount);
-                        return conn.rxUpdateWithParams("UPDATE basic_account SET pay_password=? where user_account=?", setPayPassword)
-                            .flatMap(result -> {
-                                if (result.getUpdated() > 0) {
-                                    return Single.just("success");
-                                } else {
-                                    return Single.error(new Exception("error"));
-                                }
-                            });
-                    } else {
-                        return Single.just("false");
-                    }
-                } else {
-                    return Single.just("false0");
-                }
-            })
-        );
     }
 
     /**

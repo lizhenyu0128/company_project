@@ -13,8 +13,6 @@ import com.rome.message.service.MessageServiceImpl;
 import io.reactivex.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.jdbc.JDBCClient;
-import io.vertx.ext.sql.SQLClient;
 import io.vertx.grpc.*;
 import io.vertx.reactivex.ext.asyncsql.AsyncSQLClient;
 import io.vertx.reactivex.ext.mail.MailClient;
@@ -33,8 +31,8 @@ import java.io.IOException;
  */
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
-    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\message\\src\\resources" + File.separator + "config-dev.json";
 //    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\message\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/message/src/resources" + File.separator + "config-dev.json";
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
     private RedisClient redisClient;
