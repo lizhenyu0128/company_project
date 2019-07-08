@@ -42,16 +42,19 @@ public class UaaServiceImpl implements UaaService {
     @Override
     public Single userSignUp(UserSignUp userSignUp, String invitationCode) {
         String encryptPassWord = BCrypt.hashpw(userSignUp.getUserPassword(), BCrypt.gensalt());
+        String encryptPayPassWord = BCrypt.hashpw(userSignUp.getPayPassword(), BCrypt.gensalt());
         JsonArray singUpParam = new JsonArray()
             .add(userSignUp.getUserAccount())
             .add(encryptPassWord)
+            .add(encryptPayPassWord)
             .add(userSignUp.getUserMail())
             .add(userSignUp.getUserPhone())
             .add(userSignUp.getCreateIp())
             .add(userSignUp.getUsingIp())
             .add(userSignUp.getNickName())
             .add(userSignUp.getLongitude())
-            .add(userSignUp.getLatitude());
+            .add(userSignUp.getLatitude())
+            .add(userSignUp.getLabel());
         return accountRepository.userSignUp(singUpParam, invitationCode).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
@@ -71,15 +74,8 @@ public class UaaServiceImpl implements UaaService {
      * @return
      */
     @Override
-    public Single userLogin(UserSingIn u, String userType) {
-        if (!"basic".equals(u.getLoginType())) {
-            if ("loginPhone".equals(u.getLoginType())) {
-                u.setUserMail("null");
-            } else if ("loginMail".equals(u.getLoginType())) {
-                u.setUserPhone("null");
-            }
-        }
-        return accountRepository.userLogin(u, userType).doOnError(err ->
+    public Single userLogin(UserSingIn u) {
+        return accountRepository.userLogin(u).doOnError(err ->
             logger.info(((Exception) err).getMessage()));
     }
 
@@ -89,12 +85,6 @@ public class UaaServiceImpl implements UaaService {
             logger.info(((Exception) err).getMessage());
         });
 
-    }
-
-    @Override
-    public Single setPayPassword(String userAccount, String payPassword, String userPassword) {
-        return accountRepository.setPayPassword(userAccount, payPassword, userPassword).doOnError(
-            err -> logger.info(((Exception) err).getMessage()));
     }
 
     @Override

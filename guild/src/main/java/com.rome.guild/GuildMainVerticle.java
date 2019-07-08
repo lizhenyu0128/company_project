@@ -33,7 +33,12 @@ import java.io.File;
  */
 public class GuildMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle {
 
+<<<<<<< HEAD
     private final static String CONFIG_PATH = "E:\\company\\rome-backend\\guild\\src\\resources" + File.separator + "config-dev.json";
+=======
+//    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\admin\\src\\resources" + File.separator + "config-dev.json";
+private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/guild/src/resources" + File.separator + "config-dev.json";
+>>>>>>> origin/lzy-dev
     private final static Logger logger = LoggerFactory.getLogger(GuildMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;

@@ -52,8 +52,8 @@ import java.util.regex.Pattern;
  * @author Trump
  */
 public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
-    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\wallet\\src\\main\\resources" + File.separator + "config-dev.json";
-//    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
+//    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\wallet\\src\\main\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/wallet/src/main/resources" + File.separator + "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(WalletMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -158,15 +158,11 @@ public class WalletMainVerticle extends io.vertx.reactivex.core.AbstractVerticle
 
         //get transaction coin by hash
         router.get("/api/wallet/coin/:coinPair/transaction/:hash").handler(routingContext -> {
-            System.out.println("asda");
             String coin = routingContext.request().getParam("coinPair");
             String hash = routingContext.request().getParam("hash");
-            System.out.println(hash);
-            System.out.println(coin);
             Date ss = new Date();
             DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+08:00");
             String nowTime = format.format(ss);
-            System.out.println(nowTime);
             Single<HttpResponse<Buffer>> req = webClient.get(80, "api.caodabi.com", "/v2/coin/" + coin + "/transaction/" + hash)
                 .putHeader("Authorization", "HRT Principal=bjnpmtq3q562oukvq8ig,Timestamp=" + nowTime + ",SecretKey=Z8IoCswSryuPHWnGhQix0vBlpJ67j4qaUbdNLtY9").rxSend();
             req.subscribe(res -> {
