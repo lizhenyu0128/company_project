@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
 public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
 
     //        private final static String CONFIG_PATH = "E:\\company\\rome-backend\\uaa\\src\\resources" + File.separator + "config-dev.json";
-    private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/uaa/src/resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
@@ -370,3 +370,4 @@ public class MainVerticle extends io.vertx.reactivex.core.AbstractVerticle {
     }
 }
 ///asdagitasdsad1sdasd
+//测试忽略
