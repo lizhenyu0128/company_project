@@ -9,15 +9,15 @@
     "PostgreSQL": {
         "host": "localhost",
         "driver_class": "org.postgresql.Driver",
-        "username": "postgres",
-        "password": "123456",
-        "database": "company_db"
+        "username": "",
+        "password": "",
+        "database": ""
     },
     "ConfigSMTP": {
         "port": 587,
-        "hostName": "smtp.qq.com",
-        "userName": "879681805@qq.com",
-        "passWord": "urquajrzliwdbfjf"
+        "hostName": "",
+        "userName": "",
+        "passWord": ""
     },
     "RedisClient": {
         "port": 6379
