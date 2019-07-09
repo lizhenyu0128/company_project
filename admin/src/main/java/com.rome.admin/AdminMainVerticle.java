@@ -35,8 +35,7 @@ import java.io.File;
  * @author asus
  */
 public class AdminMainVerticle  extends io.vertx.reactivex.core.AbstractVerticle{
-//    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\admin\\src\\resources" + File.separator + "config-dev.json";
-private final static String CONFIG_PATH = "/Users/lizhenyu/work_code/company_code/rome-backend/admin/src/resources" + File.separator + "config-dev.json";
+private final static String CONFIG_PATH = "config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(AdminMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;

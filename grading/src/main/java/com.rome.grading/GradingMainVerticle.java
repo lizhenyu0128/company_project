@@ -33,7 +33,7 @@ import java.io.File;
  */
 public class GradingMainVerticle extends io.vertx.reactivex.core.AbstractVerticle{
 
-    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\grading\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "grading/src/resources/config-dev.json";
     private final static Logger logger = LoggerFactory.getLogger(GradingMainVerticle.class);
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;

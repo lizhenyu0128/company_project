@@ -31,7 +31,7 @@ import java.io.IOException;
  */
 public class BasicMainVerticle extends io.vertx.reactivex.core.AbstractVerticle{
     private final static Logger logger = LoggerFactory.getLogger(BasicMainVerticle.class);
-    private final static String CONFIG_PATH = "E:\\company\\rome-backend\\basic\\src\\resources" + File.separator + "config-dev.json";
+    private final static String CONFIG_PATH = "basic/src/resources/config-dev.json";
     private AsyncSQLClient postgreSQLClient;
     private MailClient mailClient;
     private RedisClient redisClient;
