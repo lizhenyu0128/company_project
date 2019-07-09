@@ -14,6 +14,7 @@ local.properties
 .settings/
 .loadpath
 .recommenders
+config-dev.json
 
 # External tool builders
 .externalToolBuilders/
@@ -92,6 +93,7 @@ cmake-buildTool-debug/
 
 # IntelliJ
 /out/
+.idea/*
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -153,6 +155,7 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
+.mvn/*
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
@@ -187,3 +190,10 @@ nbdist/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+log/*
+
+### config ###
+config-dev.json
+config-prod.json
+log4j2.xml
