@@ -30,7 +30,7 @@
         <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
         <vertx.grpc.version>3.7.0</vertx.grpc.version>
         <vertx.version>3.7.0</vertx.version>
-        <log4j.version>2.5</log4j.version>
+        <log4j.version>2.15.0</log4j.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
 
         <main.verticle>com.rome.parent.MainVerticle</main.verticle>
